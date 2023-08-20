@@ -1,2 +1,13 @@
-# commonlit_ess
-[Kaggle Competition] CommonLit - Evaluate Student Summaries
+## 🎒📘 CommonLit - Evaluate Student Summaries
+
+### 🖍️ Final Score
+
+- Private Score:
+- Rank
+
+### 🗂️ Competition Summary
+
+### 💡 Strategy
+
+
+### 🔗 References
