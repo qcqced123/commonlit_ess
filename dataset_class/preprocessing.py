@@ -113,7 +113,6 @@ def adjust_sequences(sequences: list, max_len: int):
         max_index = length_of_seqs.index(max(length_of_seqs))
         length_of_seqs[max_index] -= 1
     sequences = [sequences[i][:l-1] for i, l in enumerate(length_of_seqs)]
-
     return sequences, length_of_seqs
 
 
@@ -128,7 +127,6 @@ def subsequent_tokenizing(cfg: configuration.CFG, text: str) -> any:
     Reference:
         https://www.kaggle.com/competitions/AI4Code/discussion/343714
         https://github.com/louis-she/ai4code/blob/master/tests/test_utils.py#L6
-
     """
     inputs = cfg.tokenizer.encode_plus(
         text,
