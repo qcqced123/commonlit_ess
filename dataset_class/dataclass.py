@@ -1,4 +1,5 @@
 import pandas as pd
+import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
@@ -25,5 +26,10 @@ class CommonLitDataset(Dataset):
     def __len__(self) -> int:
         return len(self.df)
 
-    def __getitem(self, item):
-        pass
+    def __getitem__(self, item: int):
+        p_ids = torch.from_numpy(self.df.prompt_ids.to_numpy())
+        p_titles = torch.from_numpy(self.df.prompt_title.to_numpy())
+        p_texts = torch.from_numpy(self.df.prompt_text.to_numpy())
+        p_questions = torch.from_numpy(self.df.prompt_question.to_numpy())
+
+
