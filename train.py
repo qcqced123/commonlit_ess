@@ -1,7 +1,6 @@
-import os
-
+import os, warnings
 import optuna
-import argparse, collections
+import argparse
 from omegaconf import OmegaConf
 from optuna.integration.wandb import WeightsAndBiasesCallback
 
@@ -10,6 +9,8 @@ from parse_config import ConfigParser
 from configuration import CFG
 from utils.helper import check_library, all_type_seed
 from utils import sync_config
+from dataset_class.preprocessing import add_target_token, add_common_token
+warnings.filterwarnings('ignore')
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["LRU_CACHE_CAPACITY"] = "1"
 
@@ -19,6 +20,8 @@ all_type_seed(CFG, True)
 
 def main(config_path: str, cfg) -> None:
     sync_config(OmegaConf.load(config_path))  # load json config
+    add_target_token(CFG, target_token), add_common_token(CFG, common_token)
+
     # cfg = OmegaConf.structured(CFG)
     # OmegaConf.merge(cfg)  # merge with cli_options
     if cfg.optuna:

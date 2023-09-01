@@ -9,6 +9,7 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from tqdm.auto import tqdm
+from torch import Tensor
 
 
 def kfold(df: pd.DataFrame, cfg) -> pd.DataFrame:
@@ -51,7 +52,7 @@ def mls_kfold(df: pd.DataFrame, cfg) -> pd.DataFrame:
     return df
 
 
-def add_special_token(cfg: configuration.CFG, token: str) -> None:
+def add_target_token(cfg: configuration.CFG, token: str) -> None:
     """
     Add special token to pretrained tokenizer
     Args:
@@ -65,6 +66,23 @@ def add_special_token(cfg: configuration.CFG, token: str) -> None:
 
     setattr(cfg.tokenizer, 'tar_token', f'{special_token}')
     setattr(cfg.tokenizer, 'tar_token_id', tar_token_id)
+    cfg.tokenizer.save_pretrained(f'{cfg.checkpoint_dir}/tokenizer/')
+
+
+def add_common_token(cfg: configuration.CFG, token: str) -> None:
+    """
+    Add special token to pretrained tokenizer
+    Args:
+        cfg: configuration.CFG, needed to load tokenizer from Huggingface AutoTokenizer
+        token: str, special token to add
+    """
+    special_token = token
+    special_tokens_dict = {'additional_special_tokens': [f'{special_token}']}
+    cfg.tokenizer.add_special_tokens(special_tokens_dict)
+    com_token_id = cfg.tokenizer(f'{special_token}', add_special_tokens=False)['input_ids'][0]
+
+    setattr(cfg.tokenizer, 'common_token', f'{special_token}')
+    setattr(cfg.tokenizer, 'common_token_id', com_token_id)
     cfg.tokenizer.save_pretrained(f'{cfg.checkpoint_dir}/tokenizer/')
 
 
@@ -86,7 +104,6 @@ def tokenizing(cfg: configuration.CFG, text: str) -> any:
     for k, v in inputs.items():
         # inputs[k] = torch.as_tensor(v)
         inputs[k] = torch.tensor(v)
-
     return inputs
 
 
@@ -130,13 +147,24 @@ def subsequent_tokenizing(cfg: configuration.CFG, text: str) -> any:
     """
     inputs = cfg.tokenizer.encode_plus(
         text,
-        max_length=64,
+        # max_length=64,
         padding=False,
-        truncation=True,
+        # truncation=True,
         return_tensors=None,
         add_special_tokens=False,  # No need to special token to subsequent text sequence
     )
     return inputs['input_ids']
+
+
+def find_index(x: Tensor, value: Tensor) -> Tensor:
+    """
+    Method for find some tensor element's index
+    Args:
+        x: tensor object, which is contained whole tensor elements
+        value: element that you want to find index
+    """
+    tensor_index = torch.where(x == value)
+    return tensor_index
 
 
 def subsequent_decode(cfg: configuration.CFG, token_list: list) -> any:
