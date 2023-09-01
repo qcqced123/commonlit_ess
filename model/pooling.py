@@ -69,11 +69,14 @@ class GEMPooling(nn.Module):
 
     Mean Pooling <= GEMPooling <= Max Pooling
     Because of doing exponent to each token embeddings, GEMPooling is like as weight to more activation token
+    if you set p == 1, exactly same as Mean Pooling
 
     In original paper, they use p=3, but in this class, we use p=4 because torch doesn't support pow calculation
     for negative value tensor, only for non-negative value in odd number exponent
-    [Reference]
-    https://paperswithcode.com/method/generalized-mean-pooling
+    Notes:
+         if we get NaN in Backward Pass, we will add some filter function for handling problem
+    References:
+        https://paperswithcode.com/method/generalized-mean-pooling
     """
     def __init__(self, auto_cfg) -> None:
         super(GEMPooling, self).__init__()

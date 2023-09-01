@@ -68,7 +68,7 @@
     },
     "model_utils": {
         "init_weight": "normal",
-        "stop_mode": "max",
+        "stop_mode": "min",
         "freeze": true,
         "num_freeze": 16,
         "reinit": true,
