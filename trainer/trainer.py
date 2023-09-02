@@ -1,13 +1,19 @@
+import gc
 import torch
+import pandas as pd
+import transformers
+
+from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
+from torch import Tensor
 
 import dataset_class.dataclass as dataset_class
 import model.loss as model_loss
 import model.model as model_arch
-from torch.utils.data import DataLoader
-from dataset_class.preprocessing import *
-from utils.helper import *
-from trainer.trainer_utils import *
-from model.metric import f_beta
+from configuration import CFG
+from dataset_class.preprocessing import load_data
+from utils.helper import seed_worker
+from trainer.trainer_utils import get_optimizer_grouped_parameters, get_scheduler, collate, AverageMeter, AWP
 
 
 class OneToOneTrainer:
@@ -17,7 +23,7 @@ class OneToOneTrainer:
         cfg: configuration module, configuration.py
         generator: torch.Generator, for init pytorch random seed
     """
-    def __init__(self, cfg: configuration.CFG, generator: torch.Generator) -> None:
+    def __init__(self, cfg: CFG, generator: torch.Generator) -> None:
         self.cfg = cfg
         self.model_name = self.cfg.model.split('/')[1]
         self.generator = generator
@@ -117,12 +123,12 @@ class OneToOneTrainer:
             with torch.cuda.amp.autocast(enabled=self.cfg.amp_scaler):
                 preds = model(inputs)
                 loss = criterion(preds, labels)
-                losses.update(loss, batch_size)
 
             if self.cfg.n_gradient_accumulation_steps > 1:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
 
             scaler.scale(loss).backward()
+            losses.update(loss.detach(), batch_size)  # Must do detach() for avoid memory leak
 
             if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
                 loss = awp.attack_backward(inputs, labels)
@@ -138,8 +144,9 @@ class OneToOneTrainer:
                 scaler.step(optimizer)
                 scaler.update()
                 scheduler.step()
+            gc.collect()
 
-        train_loss = losses.avg.detach().cpu().numpy()
+        train_loss = losses.avg.cpu().numpy()
         grad_norm = grad_norm.detach().cpu().numpy()
         return train_loss, grad_norm, scheduler.get_lr()[0]
 
@@ -156,6 +163,7 @@ class OneToOneTrainer:
                 batch_size = labels.size(0)
                 preds = model(inputs)
                 valid_loss = val_criterion(preds, labels)
-                valid_losses.update(valid_loss, batch_size)
-        valid_loss = valid_losses.avg.detach().cpu().numpy()
+                valid_losses.update(valid_loss.detach(), batch_size)
+            gc.collect()
+        valid_loss = valid_losses.avg.cpu().numpy()
         return valid_loss

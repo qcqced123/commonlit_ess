@@ -1,12 +1,9 @@
 import gc
-import wandb, optuna
+import wandb
 import torch
 import numpy as np
 from tqdm.auto import tqdm
-from optuna.trial import TrialState
-from optuna.integration.wandb import WeightsAndBiasesCallback
 import trainer.trainer as trainer
-from torch.optim.swa_utils import update_bn
 from configuration import CFG
 from trainer.trainer_utils import get_name, EarlyStopping
 from utils.helper import class2dict

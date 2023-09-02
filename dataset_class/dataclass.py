@@ -1,3 +1,4 @@
+import gc
 import pandas as pd
 import torch
 from torch import Tensor
@@ -51,6 +52,9 @@ class OneToOneDataset(Dataset):
 
         inputs = self.tokenizing(self.cfg, prompt)
         labels = torch.as_tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
+
+        del prompt
+        gc.collect()
         return inputs, labels
 
 

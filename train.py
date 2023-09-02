@@ -1,8 +1,6 @@
-import os, warnings
-import optuna
 import argparse
+import os, warnings
 from omegaconf import OmegaConf
-from optuna.integration.wandb import WeightsAndBiasesCallback
 
 from configuration import CFG
 import trainer.train_loop as train_loop
@@ -21,20 +19,9 @@ def main(config_path: str, cfg: CFG) -> None:
     target_token, common_token = ' [TAR] ', ' [COM] '
     sync_config(OmegaConf.load(config_path))  # load json config
     add_target_token(cfg, target_token), add_common_token(cfg, common_token)
-
     # cfg = OmegaConf.structured(CFG)
     # OmegaConf.merge(cfg)  # merge with cli_options
-    if cfg.optuna:
-        """ Optuna Hyperparameter Optimization """
-        study = optuna.create_study(
-            study_name=cfg.name,
-            direction='minimize',
-            pruner=optuna.pruners.MedianPruner(n_warmup_steps=5),
-            storage=f'sqlite:///{cfg.checkpoint_dir}{cfg.name}.db',
-            load_if_exists=True
-        )
-    else:
-        getattr(train_loop, cfg.loop)(cfg)  # init object
+    getattr(train_loop, cfg.loop)(cfg)  # init object
 
 
 if __name__ == '__main__':

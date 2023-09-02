@@ -1,15 +1,13 @@
-import re, gc, glob, io, tokenize, markdown
+import re, gc
 import pandas as pd
 import numpy as np
 import torch
 import configuration as configuration
-from bs4 import BeautifulSoup
 from sklearn.model_selection import KFold, StratifiedKFold
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from tqdm.auto import tqdm
-from torch import Tensor
 
 
 def kfold(df: pd.DataFrame, cfg) -> pd.DataFrame:
@@ -104,8 +102,8 @@ def tokenizing(cfg: configuration.CFG, text: str) -> any:
         add_special_tokens=False,  # later, we will add ourselves
     )
     for k, v in inputs.items():
-        # inputs[k] = torch.as_tensor(v)
-        inputs[k] = torch.tensor(v)
+        inputs[k] = torch.as_tensor(v)
+        # inputs[k] = torch.tensor(v)
     return inputs
 
 
