@@ -31,7 +31,7 @@ class RMSELoss(nn.Module):
 class MCRMSELoss(nn.Module):
     """
     Mean Column-wise Root Mean Squared Error Loss, which is used in this competition
-    Calculate RMSE per target values(columns), and then calculate mean of each column's RMSE
+    Calculate RMSE per target values(columns), and then calculate mean of each column's RMSE Result
     Args:
         reduction: str, reduction method of loss
         num_scored: int, number of scored target values
