@@ -158,14 +158,14 @@ def subsequent_tokenizing(cfg: configuration.CFG, text: str) -> any:
     return inputs['input_ids']
 
 
-def find_index(x: Tensor, value: Tensor) -> Tensor:
+def find_index(x: np.ndarray, value: np.ndarray) -> np.ndarray:
     """
     Method for find some tensor element's index
     Args:
         x: tensor object, which is contained whole tensor elements
         value: element that you want to find index
     """
-    tensor_index = torch.where(x == value)
+    tensor_index = np.where(x == value)
     return tensor_index
 
 

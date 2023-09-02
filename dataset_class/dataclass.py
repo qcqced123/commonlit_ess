@@ -27,12 +27,12 @@ class OneToOneDataset(Dataset):
         self.subsequent_tokenizing = subsequent_tokenizing
         self.adjust_sequences = adjust_sequences
         self.s_df = s_df
-        self.p_ids = torch.from_numpy(p_df.prompt_id.to_numpy())  # which is connection key of prompt & summaries
-        self.p_titles = torch.from_numpy(p_df.prompt_title.to_numpy())
-        self.p_texts = torch.from_numpy(p_df.prompt_text.to_numpy())
-        self.p_questions = torch.from_numpy(p_df.prompt_question.to_numpy())
-        self.s_ids = torch.from_numpy(s_df.prompt_id.to_numpy())  # which is connection key of prompt & summaries
-        self.s_texts = torch.from_numpy(s_df.text.to_numpy())
+        self.p_ids = p_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
+        self.p_titles = p_df.prompt_title.to_numpy()
+        self.p_texts = p_df.prompt_text.to_numpy()
+        self.p_questions = p_df.prompt_question.to_numpy()
+        self.s_ids = s_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
+        self.s_texts = s_df.text.to_numpy()
 
     def __len__(self) -> int:
         return len(self.s_ids)
