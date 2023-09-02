@@ -16,7 +16,7 @@
     "common_settings": {
         "wandb": true,
         "optuna": false,
-        "competition": "CommitLit",
+        "competition": "CommonLit",
         "seed": 42,
         "n_gpu": 1,
         "gpu_id": 0,
@@ -24,10 +24,10 @@
     },
     "data_settings": {
         "n_folds": 7,
-        "max_len": 1920,
+        "max_len": 768,
         "epochs": 10,
-        "batch_size": 16,
-        "val_batch_size": 16
+        "batch_size": 4,
+        "val_batch_size": 4
     },
     "gradient_settings": {
         "amp_scaler":  true,

@@ -50,7 +50,7 @@ class OneToOneDataset(Dataset):
         prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + self.p_texts[key] + com + sep
 
         inputs = self.tokenizing(self.cfg, prompt)
-        labels = torch.as_tensor(self.s_df.iloc[item, 3:], dtype=torch.float)
+        labels = torch.as_tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
         return inputs, labels
 
 

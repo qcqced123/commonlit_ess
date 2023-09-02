@@ -18,7 +18,7 @@ all_type_seed(CFG, True)
 
 
 def main(config_path: str, cfg: CFG) -> None:
-    target_token, common_token = '[TAR]', '[COM]'
+    target_token, common_token = ' [TAR] ', ' [COM] '
     sync_config(OmegaConf.load(config_path))  # load json config
     add_target_token(cfg, target_token), add_common_token(cfg, common_token)
 

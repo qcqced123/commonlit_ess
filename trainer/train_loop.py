@@ -34,12 +34,12 @@ def train_loop(cfg: CFG) -> None:
         val_score_max = np.inf
         train_input = getattr(trainer, cfg.name)(cfg, g)  # init object
         loader_train, loader_valid, train = train_input.make_batch(fold)
-        model, criterion, val_criterion, optimizer, lr_scheduler, _ = train_input.model_setting(len(train))
+        model, criterion, val_criterion, optimizer, lr_scheduler, awp = train_input.model_setting(len(train))
 
         for epoch in range(cfg.epochs):
             print(f'[{epoch + 1}/{cfg.epochs}] Train & Validation')
             train_loss, grad_norm, lr = train_input.train_fn(
-                loader_train, model, criterion, optimizer, lr_scheduler, epoch,
+                loader_train, model, criterion, optimizer, lr_scheduler, epoch, awp
             )
             valid_loss = train_input.valid_fn(
                 loader_valid, model, val_criterion
