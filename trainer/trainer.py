@@ -32,10 +32,10 @@ class OneToOneTrainer:
 
         # Custom Datasets
         train_dataset = getattr(dataset_class, self.cfg.dataset)(
-            self.cfg, self.tokenizer, self.p_df, train
+            self.cfg, self.p_df, train
         )
         valid_dataset = getattr(dataset_class, self.cfg.dataset)(
-            self.cfg, self.tokenizer, self.p_df, valid
+            self.cfg, self.p_df, valid
         )
 
         # DataLoader
