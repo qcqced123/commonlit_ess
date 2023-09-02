@@ -6,7 +6,6 @@ from optuna.integration.wandb import WeightsAndBiasesCallback
 
 from configuration import CFG
 import trainer.train_loop as train_loop
-from parse_config import ConfigParser
 from utils.helper import check_library, all_type_seed
 from utils.util import sync_config
 from dataset_class.preprocessing import add_target_token, add_common_token

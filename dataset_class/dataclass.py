@@ -4,8 +4,8 @@ from torch import Tensor
 from torch.utils.data import Dataset
 
 import configuration
-from preprocessing import tokenizing, adjust_sequences
-from preprocessing import subsequent_tokenizing, subsequent_decode, sequence_length, find_index
+from dataset_class.preprocessing import tokenizing, adjust_sequences
+from dataset_class.preprocessing import subsequent_tokenizing, subsequent_decode, sequence_length, find_index
 
 
 class OneToOneDataset(Dataset):

@@ -5,11 +5,10 @@ import numpy as np
 from tqdm.auto import tqdm
 from optuna.trial import TrialState
 from optuna.integration.wandb import WeightsAndBiasesCallback
-
+import trainer.trainer as trainer
 from torch.optim.swa_utils import update_bn
 from configuration import CFG
-from trainer import OneToOneTrainer
-from trainer_utils import get_name, EarlyStopping
+from trainer.trainer_utils import get_name, EarlyStopping
 from utils.helper import class2dict
 
 g = torch.Generator()
@@ -33,7 +32,7 @@ def train_loop(cfg: CFG) -> None:
         early_stopping.detecting_anomaly()
 
         val_score_max = np.inf
-        train_input = getattr(OneToOneTrainer, cfg.name)(cfg, g)  # init object
+        train_input = getattr(trainer, cfg.name)(cfg, g)  # init object
         loader_train, loader_valid, train = train_input.make_batch(fold)
         model, criterion, val_criterion, optimizer, lr_scheduler, _ = train_input.model_setting(len(train))
 

@@ -6,7 +6,7 @@ import model.model as model_arch
 from torch.utils.data import DataLoader
 from dataset_class.preprocessing import *
 from utils.helper import *
-from trainer_utils import *
+from trainer.trainer_utils import *
 from model.metric import f_beta
 
 
