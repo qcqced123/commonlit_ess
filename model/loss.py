@@ -29,8 +29,14 @@ class RMSELoss(nn.Module):
 
 
 class MCRMSELoss(nn.Module):
-    # num_scored => setting your number of metrics
-    def __init__(self, reduction, num_scored=6):
+    """
+    Mean Column-wise Root Mean Squared Error Loss, which is used in this competition
+    Calculate RMSE per target values(columns), and then calculate mean of each column's RMSE
+    Args:
+        reduction: str, reduction method of loss
+        num_scored: int, number of scored target values
+    """
+    def __init__(self, reduction: str, num_scored: int = 2) -> None:
         super().__init__()
         self.RMSE = RMSELoss(reduction=reduction)
         self.num_scored = num_scored
