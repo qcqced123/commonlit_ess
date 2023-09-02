@@ -23,7 +23,7 @@
         "num_workers": 4
     },
     "data_settings": {
-        "n_folds": 5,
+        "n_folds": 7,
         "max_len": 1920,
         "epochs": 10,
         "batch_size": 16,

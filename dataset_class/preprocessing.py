@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import configuration as configuration
 from bs4 import BeautifulSoup
-from sklearn.model_selection import KFold, GroupKFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
@@ -25,13 +25,15 @@ def kfold(df: pd.DataFrame, cfg) -> pd.DataFrame:
     return df
 
 
-def group_kfold(df: pd.DataFrame, cfg: configuration.CFG) -> pd.DataFrame:
+def stratified_kfold(df: pd.DataFrame, cfg: configuration.CFG) -> pd.DataFrame:
     """ GroupKFold """
-    fold = GroupKFold(
+    fold = StratifiedKFold(
         n_splits=cfg.n_folds,
+        shuffle=True,
+        random_state=cfg.seed
     )
     df['fold'] = -1
-    for num, (tx, vx) in enumerate(fold.split(X=df, y=df['pct_rank'], groups=df['ancestor_id'])):
+    for num, (tx, vx) in enumerate(fold.split(X=df, y=df['prompt_id'])):
         df.loc[vx, "fold"] = int(num)
     return df
 
