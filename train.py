@@ -4,11 +4,11 @@ import argparse
 from omegaconf import OmegaConf
 from optuna.integration.wandb import WeightsAndBiasesCallback
 
+from configuration import CFG
 import trainer.train_loop as train_loop
 from parse_config import ConfigParser
-from configuration import CFG
 from utils.helper import check_library, all_type_seed
-from utils import sync_config
+from utils.util import sync_config
 from dataset_class.preprocessing import add_target_token, add_common_token
 warnings.filterwarnings('ignore')
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -18,9 +18,10 @@ check_library(True)
 all_type_seed(CFG, True)
 
 
-def main(config_path: str, cfg) -> None:
+def main(config_path: str, cfg: CFG) -> None:
+    target_token, common_token = '[TAR]', '[COM]'
     sync_config(OmegaConf.load(config_path))  # load json config
-    add_target_token(CFG, target_token), add_common_token(CFG, common_token)
+    add_target_token(cfg, target_token), add_common_token(cfg, common_token)
 
     # cfg = OmegaConf.structured(CFG)
     # OmegaConf.merge(cfg)  # merge with cli_options
@@ -53,4 +54,5 @@ if __name__ == '__main__':
     #     CustomArgs(['--bs', '--batch_size'], type=int, target='dataset_class;args;batch_size')
     # ]
     # cli_config = ConfigParser.from_args(args, options)
-    main('fbp3_config.json', CFG)
+    main('one2one_train_cfg.json', CFG)
+
