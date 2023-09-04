@@ -32,6 +32,7 @@ class CFG:
     max_len = 512
     epochs = 180
     batch_size = 64
+    smart_batch = False
 
     """ Gradient Options """
     amp_scaler = False

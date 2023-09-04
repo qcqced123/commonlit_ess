@@ -86,24 +86,25 @@ def add_common_token(cfg: configuration.CFG, token: str) -> None:
     cfg.tokenizer.save_pretrained(f'{cfg.checkpoint_dir}/tokenizer/')
 
 
-def tokenizing(cfg: configuration.CFG, text: str) -> any:
+def tokenizing(cfg: configuration.CFG, text: str, padding: bool or str = 'max_length') -> any:
     """
     Preprocess text for LLM Input
     Args:
         cfg: configuration.CFG, needed to load tokenizer from Huggingface AutoTokenizer
         text: text from dataframe or any other dataset, please pass str type
+        padding: padding options, default 'max_length'
+                 if you want use smart batching, init this param to False
     """
     inputs = cfg.tokenizer.encode_plus(
         text,
         max_length=cfg.max_len,
-        padding='max_length',
+        padding=padding,
         truncation=True,
         return_tensors=None,
         add_special_tokens=False,  # later, we will add ourselves
     )
     for k, v in inputs.items():
         inputs[k] = torch.as_tensor(v)
-        # inputs[k] = torch.tensor(v)
     return inputs
 
 
@@ -147,9 +148,8 @@ def subsequent_tokenizing(cfg: configuration.CFG, text: str) -> any:
     """
     inputs = cfg.tokenizer.encode_plus(
         text,
-        # max_length=64,
         padding=False,
-        # truncation=True,
+        truncation=True,
         return_tensors=None,
         add_special_tokens=False,  # No need to special token to subsequent text sequence
     )

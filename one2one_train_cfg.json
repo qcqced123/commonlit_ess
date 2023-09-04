@@ -27,7 +27,8 @@
         "max_len": 1024,
         "epochs": 10,
         "batch_size": 4,
-        "val_batch_size": 4
+        "val_batch_size": 4,
+        "smart_batch": true
     },
     "gradient_settings": {
         "amp_scaler":  true,

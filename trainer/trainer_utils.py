@@ -3,9 +3,10 @@ import numpy as np
 import torch
 import transformers
 import more_itertools
-from torch.utils.data import Sampler
+from torch.utils.data import Sampler, Dataset, DataLoader
 from torch import Tensor
-from dataclasses import dataclass
+from typing import List, Tuple, Dict
+from utils.helper import seed_worker
 
 
 def get_optimizer_grouped_parameters(model, layerwise_lr, layerwise_weight_decay, layerwise_lr_decay):
@@ -47,21 +48,82 @@ def get_optimizer_params(model, encoder_lr, decoder_lr, weight_decay):
     return optimizer_parameters
 
 
+def collate(inputs: Dict[Tensor, Tensor, Tensor]) -> Dict[Tensor, Tensor, Tensor]:
+    """ Descending sort inputs by length of sequence """
+    mask_len = int(inputs["attention_mask"].sum(axis=1).max())
+    for k, v in inputs.items():
+        inputs[k] = inputs[k][:, :mask_len]
+    return inputs
+
+
+def get_dataloader(cfg, dataset: Dataset, generator: torch.Generator, shuffle: bool = True, collate_fn=None, sampler=None, drop_last: bool = True) -> DataLoader:
+    """ function for initializing torch.utils.data.DataLoader Module """
+    dataloader = DataLoader(
+            dataset,
+            batch_size=cfg.batch_size,
+            shuffle=shuffle,
+            collate_fn=collate_fn,
+            sampler=sampler,
+            worker_init_fn=seed_worker,
+            generator=generator,
+            num_workers=cfg.num_workers,
+            pin_memory=True,
+            drop_last=drop_last,
+        )
+    return dataloader
+
+
+def get_swa_scheduler(cfg, optimizer):
+    """  SWA Scheduler """
+    swa_scheduler = getattr(torch.optim.swa_utils, 'SWALR')(
+        optimizer,
+        swa_lr=cfg.swa_lr,
+        anneal_epochs=cfg.anneal_epochs,
+        anneal_strategy=cfg.anneal_strategy
+    )
+    return swa_scheduler
+
+
+def get_scheduler(cfg, optimizer, len_train: int):
+    """ Select Scheduler Function """
+    scheduler_dict = {
+        'cosine_annealing': 'get_cosine_with_hard_restarts_schedule_with_warmup',
+        'cosine': 'get_cosine_schedule_with_warmup',
+        'linear': 'get_linear_schedule_with_warmup'
+    }
+    lr_scheduler = getattr(transformers, scheduler_dict[cfg.scheduler])(
+        optimizer,
+        num_warmup_steps=int(len_train/cfg.batch_size * cfg.epochs/cfg.n_gradient_accumulation_steps) * cfg.warmup_ratio,
+        num_training_steps=int(len_train/cfg.batch_size * cfg.epochs/cfg.n_gradient_accumulation_steps),
+        num_cycles=cfg.num_cycles
+    )
+    return lr_scheduler
+
+
+def get_name(cfg) -> str:
+    """ get name of model """
+    try:
+        name = cfg.model.replace('/', '-')
+    except ValueError:
+        name = cfg.model
+    return name
+
+
 class SmartBatchingSampler(Sampler):
     """
     SmartBatching Sampler with naive pytorch torch.utils.data.Sampler implementation
     Reference:
         https://www.kaggle.com/code/rhtsingh/speeding-up-transformer-w-optimization-strategies
     """
-    def __init__(self, data_source, batch_size):
-        super(SmartBatchingSampler, self).__init__(data_source)
-        self.len = len(data_source)
-        sample_lengths = [len(seq) for seq in data_source]
+    def __init__(self, data_instance: Tensor, batch_size: int) -> None:
+        super(SmartBatchingSampler, self).__init__(data_instance)
+        self.len = len(data_instance)
+        sample_lengths = [len(seq) for seq in data_instance]
         argsort_inds = np.argsort(sample_lengths)
         self.batches = list(more_itertools.chunked(argsort_inds, n=batch_size))
         self._backsort_inds = None
 
-    def __iter__(self):
+    def __iter__(self) -> int:
         if self.batches:
             last_batch = self.batches.pop(-1)
             np.random.shuffle(self.batches)
@@ -69,7 +131,7 @@ class SmartBatchingSampler(Sampler):
         self._inds = list(more_itertools.flatten(self.batches))
         yield from self._inds
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.len
 
     @property
@@ -85,13 +147,13 @@ class SmartBatchingCollate:
     Reference:
         https://www.kaggle.com/code/rhtsingh/speeding-up-transformer-w-optimization-strategies
     """
-    def __init__(self, targets, max_length, pad_token_id):
-        self._targets = targets
+    def __init__(self, labels: Tensor, max_length: int, pad_token_id: int) -> None:
+        self._labels = labels
         self._max_length = max_length
         self._pad_token_id = pad_token_id
 
-    def __call__(self, batch):
-        if self._targets is not None:
+    def __call__(self, batch: Tuple) -> Tuple[Tensor, Tensor]:
+        if self._labels is not None:
             sequences, targets = list(zip(*batch))
         else:
             sequences = list(batch)
@@ -102,14 +164,14 @@ class SmartBatchingCollate:
             pad_token_id=self._pad_token_id
         )
 
-        if self._targets is not None:
+        if self._labels is not None:
             output = input_ids, attention_mask, torch.tensor(targets)
         else:
             output = input_ids, attention_mask
         return output
 
     @staticmethod
-    def pad_sequence(sequence_batch: dict[Tensor], max_sequence_length, pad_token_id):
+    def pad_sequence(sequence_batch: dict[Tensor], max_sequence_length: int, pad_token_id: int) -> Tuple[Tensor, Tensor]:
         max_batch_len = max(len(sequence) for sequence in sequence_batch)
         max_len = min(max_batch_len, max_sequence_length)
         padded_sequences, attention_masks = [[] for i in range(2)]
@@ -158,49 +220,6 @@ class MiniBatchCollate(object):
         )
         return inputs, labels, position_list
 
-
-def collate(inputs):
-    """ Descending sort inputs by length of sequence """
-    mask_len = int(inputs["attention_mask"].sum(axis=1).max())
-    for k, v in inputs.items():
-        inputs[k] = inputs[k][:, :mask_len]
-    return inputs
-
-
-def get_swa_scheduler(cfg, optimizer):
-    """  SWA Scheduler """
-    swa_scheduler = getattr(torch.optim.swa_utils, 'SWALR')(
-        optimizer,
-        swa_lr=cfg.swa_lr,
-        anneal_epochs=cfg.anneal_epochs,
-        anneal_strategy=cfg.anneal_strategy
-    )
-    return swa_scheduler
-
-
-def get_scheduler(cfg, optimizer, len_train: int):
-    """ Select Scheduler Function """
-    scheduler_dict = {
-        'cosine_annealing': 'get_cosine_with_hard_restarts_schedule_with_warmup',
-        'cosine': 'get_cosine_schedule_with_warmup',
-        'linear': 'get_linear_schedule_with_warmup'
-    }
-    lr_scheduler = getattr(transformers, scheduler_dict[cfg.scheduler])(
-        optimizer,
-        num_warmup_steps=int(len_train/cfg.batch_size * cfg.epochs/cfg.n_gradient_accumulation_steps) * cfg.warmup_ratio,
-        num_training_steps=int(len_train/cfg.batch_size * cfg.epochs/cfg.n_gradient_accumulation_steps),
-        num_cycles=cfg.num_cycles
-    )
-    return lr_scheduler
-
-
-def get_name(cfg) -> str:
-    """ get name of model """
-    try:
-        name = cfg.model.replace('/', '-')
-    except ValueError:
-        name = cfg.model
-    return name
 
 
 class AWP:

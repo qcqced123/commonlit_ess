@@ -18,7 +18,7 @@ class OneToOneDataset(Dataset):
         => this pipeline will be set hyper-params 'max_len' as at least 1920,
         which is maximum value of all instance's prompt sentence length
     Args:
-        cfg: config module fwfrom configuration.py
+        cfg: config module from configuration.py
         p_df: prompt train dataset, prompts_train.csv
         s_df: prompt train dataset, summaries_train.csv
     """
@@ -57,6 +57,8 @@ class OneToOneDataset(Dataset):
         prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + sep
 
         inputs = self.tokenizing(self.cfg, prompt)
+        if self.cfg.smart_batch:
+            inputs = self.tokenizing(self.cfg, prompt, padding=False)
         labels = torch.as_tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
 
         del prompt

@@ -12,13 +12,14 @@ import model.loss as model_loss
 import model.model as model_arch
 from configuration import CFG
 from dataset_class.preprocessing import load_data
-from utils.helper import seed_worker
 from trainer.trainer_utils import get_optimizer_grouped_parameters, get_scheduler, collate, AverageMeter, AWP
+from trainer.trainer_utils import SmartBatchingCollate, SmartBatchingSampler, get_dataloader
 
 
 class OneToOneTrainer:
     """
-    Trainer class for OneToOne DataSchema Pipeline
+    Trainer class for OneToOne DataSchema Pipeline, having many optimization options
+    So, if you want set options, go to cfg.json file or configuration.py
     Args:
         cfg: configuration module, configuration.py
         generator: torch.Generator, for init pytorch random seed
@@ -32,7 +33,7 @@ class OneToOneTrainer:
         self.tokenizer = self.cfg.tokenizer
 
     def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:
-        """ function for making batch instance """
+        """ function for making batch instance for random sampler, smart-batch sampler """
         train = self.s_df[self.s_df['fold'] != fold].reset_index(drop=True)
         valid = self.s_df[self.s_df['fold'] == fold].reset_index(drop=True)
 
@@ -43,29 +44,26 @@ class OneToOneTrainer:
         valid_dataset = getattr(dataset_class, self.cfg.dataset)(
             self.cfg, self.p_df, valid
         )
+        """ Initializing torch.utils.data.DataLoader Module
+        1) DataLoader with Random Sampler
+        2) DataLoader with Smart Batch Collate & Sampler
+        """
+        loader_train = get_dataloader(self.cfg, train_dataset, self.generator)
+        loader_valid = get_dataloader(self.cfg, valid_dataset, self.generator, shuffle=False, drop_last=False)
 
-        # DataLoader
-        loader_train = DataLoader(
-            train_dataset,
-            batch_size=self.cfg.batch_size,
-            shuffle=True,
-            worker_init_fn=seed_worker,
-            generator=self.generator,
-            num_workers=self.cfg.num_workers,
-            pin_memory=True,
-            drop_last=True,
-        )
+        if self.cfg.smart_batch:
+            collate_fn = SmartBatchingCollate(
+                labels=train_dataset[1],
+                max_length=self.cfg.max_len,
+                pad_token_id=self.cfg.tokenizer.pad_token_id
+            )
+            sampler = SmartBatchingSampler(
+                data_instance=train_dataset[0],
+                batch_size=self.cfg.batch_size,
+            )
+            loader_train = get_dataloader(self.cfg, train_dataset, self.generator, shuffle=False, collate_fn=collate_fn, sampler=sampler)
+            loader_valid = get_dataloader(self.cfg, valid_dataset, self.generator, shuffle=False, collate_fn=collate_fn, sampler=sampler, drop_last=False)
 
-        loader_valid = DataLoader(
-            valid_dataset,
-            batch_size=self.cfg.batch_size,
-            shuffle=False,
-            worker_init_fn=seed_worker,
-            generator=self.generator,
-            num_workers=self.cfg.num_workers,
-            pin_memory=True,
-            drop_last=False,
-        )
         return loader_train, loader_valid, train
 
     def model_setting(self, len_train: int):
@@ -113,7 +111,7 @@ class OneToOneTrainer:
 
         for step, (inputs, labels) in enumerate(tqdm(loader_train)):
             optimizer.zero_grad()
-            inputs = collate(inputs)
+            inputs = collate(inputs)  # need to check this method, when applying smart batching
 
             for k, v in inputs.items():
                 inputs[k] = v.to(self.cfg.device)  # train to gpu
@@ -156,7 +154,7 @@ class OneToOneTrainer:
         model.eval()
         with torch.no_grad():
             for step, (inputs, labels) in enumerate(tqdm(loader_valid)):
-                inputs = collate(inputs)
+                inputs = collate(inputs)  # need to check this method, when applying smart batching
                 for k, v in inputs.items():
                     inputs[k] = v.to(self.cfg.device)
                 labels = labels.to(self.cfg.device)
