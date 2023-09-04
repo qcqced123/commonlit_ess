@@ -18,7 +18,7 @@ class OneToOneDataset(Dataset):
         => this pipeline will be set hyper-params 'max_len' as at least 1920,
         which is maximum value of all instance's prompt sentence length
     Args:
-        cfg: config module from configuration.py
+        cfg: config module fwfrom configuration.py
         p_df: prompt train dataset, prompts_train.csv
         s_df: prompt train dataset, summaries_train.csv
     """
@@ -45,8 +45,13 @@ class OneToOneDataset(Dataset):
 
         # 2) load feature for making prompt sentence & LLM's inputs
         key = find_index(self.p_ids, self.s_ids[item])
-
-        # 3) make prompt sentence for LLM's inputs
+        """
+        3) make prompt sentence for LLM's inputs
+            - summaries_text + prompt_question + prompt_title + prompt_text => 0
+            - summaries_text + prompt_question + prompt_title
+            - summaries_text + prompt_question + prompt_text
+            - summaries_text + prompt_title + prompt_text
+        """
         prompt = cls + tar + self.s_texts[item] + tar + sep
         prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + self.p_texts[key] + com + sep
 
