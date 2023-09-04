@@ -48,7 +48,7 @@ def get_optimizer_params(model, encoder_lr, decoder_lr, weight_decay):
     return optimizer_parameters
 
 
-def collate(inputs: Dict[Tensor, Tensor, Tensor]) -> Dict[Tensor, Tensor, Tensor]:
+def collate(inputs) -> Dict:
     """ Descending sort inputs by length of sequence """
     mask_len = int(inputs["attention_mask"].sum(axis=1).max())
     for k, v in inputs.items():
