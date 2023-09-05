@@ -23,7 +23,7 @@ batch_scheduler:
   value: true
 batch_size:
   desc: null
-  value: 8
+  value: 4
 betas:
   desc: null
   value:
@@ -34,7 +34,7 @@ cfg_name:
   value: CFG
 checkpoint_dir:
   desc: null
-  value: ./checkpoint/model/type12_no_smart_batch
+  value: ./checkpoint/model/type12_no_smart_batch/
 clipping_grad:
   desc: null
   value: true
@@ -157,7 +157,7 @@ seed:
   value: 42
 smart_batch:
   desc: null
-  value: 8
+  value: 4
 state_dict:
   desc: null
   value: ''
@@ -189,7 +189,7 @@ train:
   value: true
 val_batch_size:
   desc: null
-  value: 8
+  value: 4
 val_loss_fn:
   desc: null
   value: MCRMSELoss
@@ -208,7 +208,7 @@ _wandb:
     huggingface_version: 4.31.0
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1693836861.122776
+    start_time: 1693872448.975552
     t:
       1:
       - 1

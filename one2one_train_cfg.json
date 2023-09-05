@@ -2,7 +2,7 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/type12_no_smart_batch",
+        "checkpoint_dir": "./checkpoint/model/type12_no_smart_batch/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",

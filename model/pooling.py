@@ -3,6 +3,8 @@ import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
 
+from model.model_utils import check_nan, nan_filtering
+
 
 # WeightedLayerPooling: Use Intermediate Layer's Embedding
 class WeightedLayerPooling(nn.Module):
@@ -75,6 +77,7 @@ class GEMPooling(nn.Module):
     for negative value tensor, only for non-negative value in odd number exponent
     Notes:
          if we get NaN in Backward Pass, we will add some filter function for handling problem
+         (Update: 2023-09-04) we get NaN in Backward Pass, So add filter function below
     References:
         https://paperswithcode.com/method/generalized-mean-pooling
     """
@@ -93,10 +96,22 @@ class GEMPooling(nn.Module):
         sum_embeddings = torch.sum(
             torch.pow(last_hidden_state * input_mask_expanded, p), 1
         )
+        # Check NaN value in Embedding after applying torch.pow
+        if check_nan(sum_embeddings):
+            sum_embeddings = nan_filtering(sum_embeddings)
+
         sum_mask = input_mask_expanded.sum(1)
         sum_mask = torch.clamp(sum_mask, min=1e-9)
+
         tmp_embeddings = sum_embeddings / sum_mask
+        # Check NaN value in Embedding after applying divide
+        if check_nan(tmp_embeddings):
+            tmp_embeddings = nan_filtering(tmp_embeddings)
+
         gem_embeddings = torch.pow(tmp_embeddings, 1/p)
+        # Check NaN value in Embedding after applying torch.pow
+        if check_nan(gem_embeddings):
+            gem_embeddings = nan_filtering(gem_embeddings)
         return gem_embeddings
 
 

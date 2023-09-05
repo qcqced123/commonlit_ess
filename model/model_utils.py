@@ -25,8 +25,10 @@ def zero_filtering(x: torch.Tensor) -> torch.Tensor:
 
 def nan_filtering(x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     """
-    Change eps value for NaN Embedding, because competition metric is cosine similarity
-    Cosine Similarity will be returned NaN
+    Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc
+    Args:
+        x: tensor object, which is contained whole tensor elements
+        eps: epsilon value for NaN Embedding, default is 1e-9
     """
     return torch.nan_to_num(x, nan=eps)
 
