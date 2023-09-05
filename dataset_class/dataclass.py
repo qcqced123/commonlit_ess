@@ -32,8 +32,8 @@ class OneToOneSmartBatchDataset(Dataset):
         self.cfg = cfg
         self.tokenizing = tokenizing
         self.s_df = s_df
-        self.prompts = self.s_df.prompt_id.to_list()
-        self.labels = self.s_df.iloc[:, 3:5].to_list()
+        self.prompts = self.s_df.prompt_id.to_list()  # prompt sentence: already have shape of prompt
+        self.labels = self.s_df.iloc[:, 3:5].to_list()  # native in original dataframe
 
     def __len__(self) -> int:
         return len(self.s_df)
@@ -54,10 +54,12 @@ class OneToOneSmartBatchDataset(Dataset):
             max_length=self.cfg.max_len,
             pad_token_id=self.cfg.tokenizer.pad_token_id
         )
+
         sampler = SmartBatchingSampler(
             data_instance=self.prompts,
             batch_size=self.cfg.batch_size,
         )
+
         smart_dataloader = DataLoader(
             dataset=self,
             batch_size=self.cfg.batch_size,
