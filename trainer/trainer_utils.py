@@ -1,4 +1,3 @@
-import re
 import numpy as np
 import torch
 import transformers
@@ -111,7 +110,12 @@ def get_name(cfg) -> str:
 
 class SmartBatchingSampler(Sampler):
     """
-    SmartBatching Sampler with naive pytorch torch.utils.data.Sampler implementation
+    SmartBatching Sampler with naive pytorch torch.utils.data.Sampler implementation, which is iterable-style dataset
+    not map-style dataset module.
+    This class chunk whole of batch instances by length for making mini-batch by its length
+    Args:
+        data_instance: whole of batch instances, not mini-batch-level
+        batch_size: amount of mini-batch from configuration.py or cfg.json
     Reference:
         https://www.kaggle.com/code/rhtsingh/speeding-up-transformer-w-optimization-strategies
     """
@@ -143,7 +147,12 @@ class SmartBatchingSampler(Sampler):
 
 class SmartBatchingCollate:
     """
-    SmartBatchingCollate will add padding upto highest sequence length, make attention masks, targets for each sample in batch.
+    SmartBatchingCollate will add padding upto highest sequence length, make attention masks,
+    targets for each sample in batch.
+    Args:
+        labels: target value of training dataset
+        max_length: value from configuration.py or cfg.json which is initialized by user
+        pad_token_id: int value from pretrained tokenizer, AutoTokenizer.tokenizer.pad_token_ids
     Reference:
         https://www.kaggle.com/code/rhtsingh/speeding-up-transformer-w-optimization-strategies
     """

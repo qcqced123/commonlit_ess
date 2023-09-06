@@ -46,6 +46,7 @@ class OneToOneDataset(Dataset):
         key = find_index(self.p_ids, self.s_ids[item])
         """
         3) make prompt sentence for LLM's inputs
+        laterly, check special token's position & numbers are affected to model's NLI performance
             - summaries_text + prompt_question + prompt_title + prompt_text => 0
             - summaries_text + prompt_question + prompt_title
             - summaries_text + prompt_question + prompt_text
