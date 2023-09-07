@@ -2,13 +2,13 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/type12_no_smart_batch/",
+        "checkpoint_dir": "./checkpoint/model/type11_smart_batch/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
-        "name": "OneToOneTrainer",
+        "name": "OneToOneSmartBatchTrainer",
         "loop": "train_loop",
-        "dataset": "OneToOneDataset",
+        "dataset": "OneToOneSmartBatchDataset",
         "model_arch": "OneToOneModel",
         "model": "microsoft/deberta-v3-large",
         "pooling": "GEMPooling"
@@ -24,10 +24,10 @@
     },
     "data_settings": {
         "n_folds": 7,
-        "max_len": 1024,
+        "max_len": 1920,
         "epochs": 10,
-        "batch_size": 4,
-        "val_batch_size": 4,
+        "batch_size": 2,
+        "val_batch_size": 2,
         "smart_batch": false
     },
     "gradient_settings": {
@@ -35,7 +35,7 @@
         "gradient_checkpoint": false,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 1
+        "max_grad_norm": 1000
     },
    "loss_options": {
         "loss_fn": "SmoothL1Loss",

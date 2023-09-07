@@ -165,7 +165,7 @@ class OneToOneSmartBatchTrainer:
         self.cfg = cfg
         self.model_name = self.cfg.model.split('/')[1]
         self.generator = generator
-        self.s_df = load_data('./dataset_class/data_folder/summaries_train.csv')
+        self.s_df = load_data('./dataset_class/data_folder/type11_summaries_train.csv')
         self.tokenizer = self.cfg.tokenizer
 
     def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:
@@ -182,7 +182,7 @@ class OneToOneSmartBatchTrainer:
         )
         # 2) Initializing torch.utils.data.DataLoader Module
         loader_train = train_dataset.get_smart_dataloader()
-        loader_valid = valid_dataset.get_smart_dataloader(drop_list=False)
+        loader_valid = valid_dataset.get_smart_dataloader(drop_last=False)
         return loader_train, loader_valid, train
 
     def model_setting(self, len_train: int):

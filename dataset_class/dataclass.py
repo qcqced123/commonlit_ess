@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, sampler, DataLoader
+from typing import List, Tuple, Dict
 
 import configuration
 from dataset_class.preprocessing import tokenizing, adjust_sequences
@@ -86,34 +87,32 @@ class OneToOneSmartBatchDataset(Dataset):
         self.cfg = cfg
         self.tokenizing = tokenizing
         self.s_df = s_df
-        self.prompts = self.s_df.prompt_id.to_list()  # prompt sentence: already have shape of prompt
-        self.labels = self.s_df.iloc[:, 3:5].to_list()  # native in original dataframe
+        self.contents = self.s_df.content.to_list()
+        self.wordings = self.s_df.wording.to_list()
+        self.prompts = self.s_df.prompt.to_list()
+        self._prompts = [self.tokenizing(self.cfg, prompt)["input_ids"] for prompt in self.prompts]
+        self._labels = [[content, wording] for content, wording in zip(self.contents, self.wordings)]
 
     def __len__(self) -> int:
         return len(self.s_df)
 
-    def __getitem__(self, item: int) -> tuple[dict, Tensor]:
-        prompt = self.prompts[item]
-        inputs = self.tokenizing(self.cfg, prompt, padding=False)
-        labels = torch.as_tensor(self.labels[item], dtype=torch.float)
-
-        del prompt
+    def __getitem__(self, item: int) -> Tuple[List, List]:
+        inputs = self._prompts[item]
+        labels = self._labels[item]
         gc.collect()
         return inputs, labels
 
     def get_smart_dataloader(self, drop_last: bool = True) -> DataLoader:
         """ function for getting smart-batching dataloader """
         collate_fn = SmartBatchingCollate(
-            labels=self.labels,
+            labels=self._labels,
             max_length=self.cfg.max_len,
             pad_token_id=self.cfg.tokenizer.pad_token_id
         )
-
         sampler = SmartBatchingSampler(
-            data_instance=self.prompts,
+            data_instance=self._prompts,
             batch_size=self.cfg.batch_size,
         )
-
         smart_dataloader = DataLoader(
             dataset=self,
             batch_size=self.cfg.batch_size,
