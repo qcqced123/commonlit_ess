@@ -180,7 +180,7 @@ class SmartBatchingCollate:
         return output
 
     @staticmethod
-    def pad_sequence(sequence_batch, max_sequence_length: int, pad_token_id: int) -> Tuple[Tensor, Tensor]:
+    def pad_sequence(sequence_batch: List, max_sequence_length: int, pad_token_id: int) -> Tuple[Tensor, Tensor]:
         max_batch_len = max(len(sequence) for sequence in sequence_batch)
         max_len = min(max_batch_len, max_sequence_length)
         padded_sequences, attention_masks = [[] for i in range(2)]
@@ -197,7 +197,6 @@ class SmartBatchingCollate:
 
             padded_sequences.append(new_sequence)
             attention_masks.append(attention_mask)
-        print(type(padded_sequences))
         padded_sequences = torch.as_tensor(padded_sequences)
         attention_masks = torch.as_tensor(attention_masks)
         return padded_sequences, attention_masks

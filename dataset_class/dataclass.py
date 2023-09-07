@@ -89,8 +89,8 @@ class OneToOneSmartBatchDataset(Dataset):
         self.s_df = s_df
         self.contents = self.s_df.content.to_list()
         self.wordings = self.s_df.wording.to_list()
-        self.prompts = self.s_df.prompt.to_list()
-        self._prompts = [self.tokenizing(self.cfg, prompt)["input_ids"] for prompt in self.prompts]
+        self._prompts = self.s_df.prompt.apply(self.cfg.tokenizer.tokenize).apply(self.cfg.tokenizer.convert_tokens_to_ids).to_list()
+        # self._prompts = [self.tokenizing(self.cfg, prompt)["input_ids"] for prompt in self.prompts]
         self._labels = [[content, wording] for content, wording in zip(self.contents, self.wordings)]
 
     def __len__(self) -> int:

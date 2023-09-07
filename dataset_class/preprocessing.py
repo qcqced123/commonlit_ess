@@ -88,7 +88,7 @@ def add_common_token(cfg: configuration.CFG, token: str) -> None:
 
 def tokenizing(cfg: configuration.CFG, text: str, padding: bool or str = 'max_length') -> any:
     """
-    Preprocess text for LLM Input
+    Preprocess text for LLM Input, for common batch system
     Args:
         cfg: configuration.CFG, needed to load tokenizer from Huggingface AutoTokenizer
         text: text from dataframe or any other dataset, please pass str type
