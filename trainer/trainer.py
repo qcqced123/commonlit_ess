@@ -230,7 +230,6 @@ class OneToOneSmartBatchTrainer:
 
         for step, (inputs, attention_masks, labels) in enumerate(tqdm(loader_train)):
             optimizer.zero_grad()
-            inputs['attention_masks'] = attention_masks # push attention mask to input_ids dict, maybe check later this line must be needed
             inputs = collate(inputs)  # need to check this method, when applying smart batching
 
             for k, v in inputs.items():
