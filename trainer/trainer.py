@@ -262,6 +262,7 @@ class OneToOneSmartBatchTrainer:
                 scaler.step(optimizer)
                 scaler.update()
                 scheduler.step()
+            torch.cuda.empty_cache()
             gc.collect()
 
         train_loss = losses.avg.cpu().numpy()
@@ -282,7 +283,9 @@ class OneToOneSmartBatchTrainer:
                 preds = model(inputs)
                 valid_loss = val_criterion(preds, labels)
                 valid_losses.update(valid_loss.detach(), batch_size)
-            gc.collect()
+
+                torch.cuda.empty_cache()
+                gc.collect()
         valid_loss = valid_losses.avg.cpu().numpy()
         return valid_loss
 
