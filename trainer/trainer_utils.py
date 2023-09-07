@@ -173,11 +173,12 @@ class SmartBatchingCollate:
             pad_token_id=self._pad_token_id
         )
 
+        output = {'input_ids': input_ids, 'attention_mask': attention_mask}
         if self._labels is not None:
-            output = input_ids, attention_mask, torch.as_tensor(targets)
+            labels = torch.as_tensor(targets)
         else:
             output = input_ids, attention_mask
-        return output
+        return output, labels
 
     @staticmethod
     def pad_sequence(sequence_batch: List, max_sequence_length: int, pad_token_id: int) -> Tuple[Tensor, Tensor]:

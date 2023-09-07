@@ -228,7 +228,7 @@ class OneToOneSmartBatchTrainer:
         losses = AverageMeter()
         model.train()
 
-        for step, (inputs, attention_masks, labels) in enumerate(tqdm(loader_train)):
+        for step, (inputs, labels) in enumerate(tqdm(loader_train)):
             optimizer.zero_grad()
             inputs = collate(inputs)  # need to check this method, when applying smart batching
 
