@@ -23,7 +23,7 @@ def zero_filtering(x: torch.Tensor) -> torch.Tensor:
     return x
 
 
-def nan_filtering(x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+def nan_filtering(x: torch.Tensor, eps: float = 1e-2) -> torch.Tensor:
     """
     Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc
     Args:
