@@ -6,9 +6,9 @@
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
-        "name": "OneToOneSmartBatchTrainer",
+        "name": "OneToOneTrainer",
         "loop": "train_loop",
-        "dataset": "OneToOneSmartBatchDataset",
+        "dataset": "OneToOneDataset",
         "model_arch": "OneToOneModel",
         "model": "microsoft/deberta-v3-large",
         "pooling": "GEMPooling"
@@ -26,12 +26,12 @@
         "n_folds": 7,
         "max_len": 384,
         "epochs": 10,
-        "batch_size": 16,
-        "val_batch_size": 16,
-        "smart_batch": true
+        "batch_size": 32,
+        "val_batch_size": 32,
+        "smart_batch": false
     },
     "gradient_settings": {
-        "amp_scaler":  true,
+        "amp_scaler": true,
         "gradient_checkpoint": false,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
@@ -68,12 +68,12 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "init_weight": "normal",
+        "init_weight": "orthogonal",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 8,
+        "num_freeze": 4,
         "reinit": true,
-        "num_reinit": 1,
+        "num_reinit": 5,
         "awp": false,
         "nth_awp_start_epoch": 2,
         "awp_eps": 1e-2,

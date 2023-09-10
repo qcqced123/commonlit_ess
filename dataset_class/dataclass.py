@@ -53,15 +53,12 @@ class OneToOneDataset(Dataset):
             - summaries_text + prompt_question + prompt_text
             - summaries_text + prompt_title + prompt_text
         """
-        prompt = cls + tar + self.s_texts[item] + tar + sep
-#        prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + self.p_texts[key] + com + sep
-        prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + sep
-
+        prompt = cls + com + self.p_questions[key] + com + self.p_titles[key] + com + sep + tar + self.s_texts[item] + tar + sep
+        # prompt = cls + tar + self.s_texts[item] + tar + sep
+        # prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + self.p_texts[key] + com + sep
+        # prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + sep
         inputs = self.tokenizing(self.cfg, prompt)
-        labels = torch.as_tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
-
-        del prompt
-        gc.collect()
+        labels = torch.tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
         return inputs, labels
 
 
@@ -99,7 +96,6 @@ class OneToOneSmartBatchDataset(Dataset):
     def __getitem__(self, item: int) -> Tuple[List, List]:
         inputs = self._prompts[item]
         labels = self._labels[item]
-        gc.collect()
         return inputs, labels
 
     def get_smart_dataloader(self, drop_last: bool = True) -> DataLoader:

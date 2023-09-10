@@ -104,7 +104,7 @@ def tokenizing(cfg: configuration.CFG, text: str, padding: bool or str = 'max_le
         add_special_tokens=False,  # later, we will add ourselves
     )
     for k, v in inputs.items():
-        inputs[k] = torch.as_tensor(v)
+        inputs[k] = torch.tensor(v)
     return inputs
 
 
