@@ -2,7 +2,7 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/type11_smart_batch/",
+        "checkpoint_dir": "./checkpoint/model/type12_smart_batch/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
@@ -24,10 +24,10 @@
     },
     "data_settings": {
         "n_folds": 7,
-        "max_len": 1280,
+        "max_len": 512,
         "epochs": 5,
-        "batch_size": 2,
-        "val_batch_size": 2,
+        "batch_size": 16,
+        "val_batch_size": 16,
         "smart_batch": true
     },
     "gradient_settings": {

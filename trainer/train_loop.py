@@ -15,13 +15,13 @@ g.manual_seed(CFG.seed)
 def train_loop(cfg: CFG) -> None:
     """ Base Trainer Loop Function """
     fold_list = [i for i in range(cfg.n_folds)]
-    for fold in tqdm(fold_list[5:]):
+    for fold in tqdm(fold_list):
         print(f'============== {fold}th Fold Train & Validation ==============')
         wandb.init(
             project=cfg.name,
             name=f'[{cfg.model_arch}]' + cfg.model + f'/fold{fold}',
             config=class2dict(cfg),
-            group=f'{cfg.model}/{cfg.pooling}/max_length_{cfg.max_len}/',
+            group=f'prompt1-2/{cfg.model}/{cfg.pooling}/max_length_{cfg.max_len}/',
             job_type='train',
             entity="qcqced"
         )
