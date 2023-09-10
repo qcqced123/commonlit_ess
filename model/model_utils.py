@@ -23,51 +23,18 @@ def zero_filtering(x: torch.Tensor) -> torch.Tensor:
     return x
 
 
-def pow_nan_filtering(x: torch.Tensor, eps: float = 1e-2) -> torch.Tensor:
+def nan_filtering(x: torch.Tensor, eps: float = 1e-2) -> torch.Tensor:
     """
     init unique eps value for each operations in torch.amp.auto_cast
     Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc
+    Notes:
+        1) torch.float16 on CUDA: add, matmul, conv, GRU, Linear, LSTM, RNN, mm
+        2) torch.float32 on CUDA: division, angular, cross entropy, exp, l1_loss, log_softmax, margin_ranking_loss
+        smooth_l1_loss, sum, binary_cross_entorpy_with_logits, pow, log, nll_loss, layer_norm, Cosine Similarity
+
     Args:
         x: tensor object, which is contained whole tensor elements
         eps: epsilon value for NaN Embedding, default is 1e-2
-    """
-    return torch.nan_to_num(x, nan=eps)
-
-
-def matmul_nan_filtering(x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
-    """
-    init unique eps value for each operations in torch.amp.auto_cast
-    Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc
-    Args:
-        x: tensor object, which is contained whole tensor elements
-        eps: epsilon value for NaN Embedding, default is 1e-4
-    """
-    return torch.nan_to_num(x, nan=eps)
-
-
-def float16_nan_filtering(x: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
-    """
-    init unique eps value for each operations in torch.amp.auto_cast
-    Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc
-    Notes:
-        add, matmul, conv, GRU, Linear, LSTM, RNN, mm
-    Args:
-        x: tensor object, which is contained whole tensor elements
-        eps: epsilon value for NaN Embedding, default is 1e-15
-    """
-    return torch.nan_to_num(x, nan=eps)
-
-
-def float32_nan_filtering(x: torch.Tensor, eps: float = 1e-15) -> torch.Tensor:
-    """
-    init unique eps value for each operations in torch.amp.auto_cast
-    Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc
-    Notes:
-        division, angular, cross entropy, exp, l1_loss, log_softmax, margin_ranking_loss (loss)
-        smooth_l1_loss, sum, binary_cross_entorpy_with_logits, pow, log, nll_loss, layer_norm
-    Args:
-        x: tensor object, which is contained whole tensor elements
-        eps: epsilon value for NaN Embedding, default is 1e-31
     """
     return torch.nan_to_num(x, nan=eps)
 
