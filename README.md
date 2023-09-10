@@ -13,7 +13,7 @@
 ### 💡 Strategy
 `🎨 Various Embedding Ensemble`
 
-
+![Modeling Strategy](/assets/modeling_strategy.png)
 
 - **🖍️ Make Two types of Prompt for LLM's Input**
 
