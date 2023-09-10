@@ -6,7 +6,8 @@ import transformers
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from torch import Tensor
-from typing import Tuple, List
+from torch.profiler import profile, record_function, ProfilerActivity
+from typing import Tuple
 
 import dataset_class.dataclass as dataset_class
 import model.loss as model_loss
@@ -91,44 +92,46 @@ class OneToOneTrainer:
         scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.amp_scaler)
         losses = AverageMeter()
         model.train()
+        with profile(activities=[ProfilerActivity.CUDA], record_shapes=True) as prof:
+            with record_function("model_train"):
+                for step, (inputs, labels) in enumerate(tqdm(loader_train)):
+                    optimizer.zero_grad()
+                    inputs = collate(inputs)  # need to check this method, when applying smart batching
 
-        for step, (inputs, labels) in enumerate(tqdm(loader_train)):
-            optimizer.zero_grad()
-            inputs = collate(inputs)  # need to check this method, when applying smart batching
+                    for k, v in inputs.items():
+                        inputs[k] = v.to(self.cfg.device)  # train to gpu
+                    labels = labels.to(self.cfg.device)  # Two target values to GPU
+                    batch_size = labels.size(0)
 
-            for k, v in inputs.items():
-                inputs[k] = v.to(self.cfg.device)  # train to gpu
-            labels = labels.to(self.cfg.device)  # Two target values to GPU
-            batch_size = labels.size(0)
+                    with torch.cuda.amp.autocast(enabled=self.cfg.amp_scaler):
+                        preds = model(inputs)
+                        loss = criterion(preds, labels)
 
-            with torch.cuda.amp.autocast(enabled=self.cfg.amp_scaler):
-                preds = model(inputs)
-                loss = criterion(preds, labels)
+                    if self.cfg.n_gradient_accumulation_steps > 1:
+                        loss = loss / self.cfg.n_gradient_accumulation_steps
 
-            if self.cfg.n_gradient_accumulation_steps > 1:
-                loss = loss / self.cfg.n_gradient_accumulation_steps
+                    scaler.scale(loss).backward()
+                    losses.update(loss.detach(), batch_size)  # Must do detach() for avoid memory leak
 
-            scaler.scale(loss).backward()
-            losses.update(loss.detach(), batch_size)  # Must do detach() for avoid memory leak
+                    if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
+                        loss = awp.attack_backward(inputs, labels)
+                        scaler.scale(loss).backward()
+                        awp._restore()
 
-            if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
-                loss = awp.attack_backward(inputs, labels)
-                scaler.scale(loss).backward()
-                awp._restore()
+                    if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
+                        scaler.unscale_(optimizer)
+                        grad_norm = torch.nn.utils.clip_grad_norm(
+                            model.parameters(),
+                            self.cfg.max_grad_norm * self.cfg.n_gradient_accumulation_steps
+                        )
+                        scaler.step(optimizer)
+                        scaler.update()
+                        scheduler.step()
+                    gc.collect()
 
-            if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
-                scaler.unscale_(optimizer)
-                grad_norm = torch.nn.utils.clip_grad_norm(
-                    model.parameters(),
-                    self.cfg.max_grad_norm * self.cfg.n_gradient_accumulation_steps
-                )
-                scaler.step(optimizer)
-                scaler.update()
-                scheduler.step()
-            gc.collect()
-
-        train_loss = losses.avg.cpu().numpy()
-        grad_norm = grad_norm.detach().cpu().numpy()
+                train_loss = losses.avg.cpu().numpy()
+                grad_norm = grad_norm.detach().cpu().numpy()
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
         return train_loss, grad_norm, scheduler.get_lr()[0]
 
     def valid_fn(self, loader_valid, model, val_criterion) -> Tensor:
