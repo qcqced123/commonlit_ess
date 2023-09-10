@@ -245,15 +245,14 @@ class OneToOneSmartBatchTrainer:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
 
             scaler.scale(loss).backward()
-            losses.update(loss.detach(), batch_size)  # Must do detach() for avoid memory leak
+            losses.update(loss.detach().cpu().numpy(), batch_size)  # Must do detach() for avoid memory leak
 
             if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
                 loss = awp.attack_backward(inputs, labels)
                 scaler.scale(loss).backward()
                 awp._restore()
 
-            if self.cfg.clipping_grad and (
-                step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
+            if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
                 scaler.unscale_(optimizer)
                 grad_norm = torch.nn.utils.clip_grad_norm(
                     model.parameters(),
@@ -265,7 +264,7 @@ class OneToOneSmartBatchTrainer:
             torch.cuda.empty_cache()
             gc.collect()
 
-        train_loss = losses.avg.cpu().numpy()
+        train_loss = losses.avg
         grad_norm = grad_norm.detach().cpu().numpy()
         return train_loss, grad_norm, scheduler.get_lr()[0]
 
@@ -282,10 +281,10 @@ class OneToOneSmartBatchTrainer:
                 batch_size = labels.size(0)
                 preds = model(inputs)
                 valid_loss = val_criterion(preds, labels)
-                valid_losses.update(valid_loss.detach(), batch_size)
+                valid_losses.update(valid_loss.detach().cpu().numpy(), batch_size)
 
                 torch.cuda.empty_cache()
                 gc.collect()
-        valid_loss = valid_losses.avg.cpu().numpy()
+        valid_loss = valid_losses.avg
         return valid_loss
 

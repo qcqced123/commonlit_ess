@@ -24,8 +24,8 @@
     },
     "data_settings": {
         "n_folds": 7,
-        "max_len": 512,
-        "epochs": 5,
+        "max_len": 384,
+        "epochs": 10,
         "batch_size": 16,
         "val_batch_size": 16,
         "smart_batch": true
@@ -38,7 +38,7 @@
         "max_grad_norm": 1000
     },
    "loss_options": {
-        "loss_fn": "SmoothL1Loss",
+        "loss_fn": "RMSELoss",
         "val_loss_fn": "MCRMSELoss",
         "reduction": "mean"
     },
@@ -58,7 +58,7 @@
     "scheduler_options": {
         "scheduler": "cosine_annealing",
         "batch_scheduler": true,
-        "num_cycles": 1,
+        "num_cycles": 2,
         "warmup_ratio": 0.1
     },
     "swa_options": {
@@ -71,7 +71,7 @@
         "init_weight": "normal",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 16,
+        "num_freeze": 8,
         "reinit": true,
         "num_reinit": 1,
         "awp": false,
