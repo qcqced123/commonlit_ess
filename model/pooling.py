@@ -3,7 +3,8 @@ import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
 
-from model.model_utils import check_nan, nan_filtering
+from model.model_utils import check_nan, pow_nan_filtering, pow_nan_filtering, matmul_nan_filtering
+from model.model_utils import float16_nan_filtering, float32_nan_filtering
 
 
 # WeightedLayerPooling: Use Intermediate Layer's Embedding
@@ -98,7 +99,7 @@ class GEMPooling(nn.Module):
         )
         # Check NaN value in Embedding after applying torch.pow
         if check_nan(sum_embeddings):
-            sum_embeddings = nan_filtering(sum_embeddings)
+            sum_embeddings = pow_nan_filtering(sum_embeddings)
 
         sum_mask = input_mask_expanded.sum(1)
         sum_mask = torch.clamp(sum_mask, min=1e-9)
@@ -106,13 +107,66 @@ class GEMPooling(nn.Module):
         tmp_embeddings = sum_embeddings / sum_mask
         # Check NaN value in Embedding after applying divide
         if check_nan(tmp_embeddings):
-            tmp_embeddings = nan_filtering(tmp_embeddings)
+            tmp_embeddings = pow_nan_filtering(tmp_embeddings)
 
         gem_embeddings = torch.pow(tmp_embeddings, 1/p)
         # Check NaN value in Embedding after applying torch.pow
         if check_nan(gem_embeddings):
-            gem_embeddings = nan_filtering(gem_embeddings)
+            gem_embeddings = pow_nan_filtering(gem_embeddings)
         return gem_embeddings
+
+
+# GEM Pooling for Test nan filtering
+class TempGEMPooling(nn.Module):
+    """
+    Generalized Mean Pooling for Natural Language Processing
+    This class version of GEMPooling for NLP, Transfer from Computer Vision Task Code
+
+    Mean Pooling <= GEMPooling <= Max Pooling
+    Because of doing exponent to each token embeddings, GEMPooling is like as weight to more activation token
+    if you set p == 1, exactly same as Mean Pooling
+
+    In original paper, they use p=3, but in this class, we use p=4 because torch doesn't support pow calculation
+    for negative value tensor, only for non-negative value in odd number exponent
+    Notes:
+         if we get NaN in Backward Pass, we will add some filter function for handling problem
+         (Update: 2023-09-04) we get NaN in Backward Pass, So add filter function below
+    References:
+        https://paperswithcode.com/method/generalized-mean-pooling
+    """
+    def __init__(self, auto_cfg) -> None:
+        super(TempGEMPooling, self).__init__()
+
+    @staticmethod
+    def forward(last_hidden_state, attention_mask, p: int = 4) -> Tensor:
+        """
+        1) Expand Attention Mask from [batch_size, max_len] to [batch_size, max_len, hidden_size]
+        2) Sum Embeddings along max_len axis so now we have [batch_size, hidden_size]
+        3) Sum Mask along max_len axis, This is done so that we can ignore padding tokens
+        4) Average
+        """
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+        sum_embeddings = torch.sum(
+            torch.pow(last_hidden_state * input_mask_expanded, p), 1
+        )
+        # Check NaN value in Embedding after applying torch.pow
+        if check_nan(sum_embeddings):
+            sum_embeddings = float32_nan_filtering(sum_embeddings)
+
+        sum_mask = input_mask_expanded.sum(1)
+        sum_mask = torch.clamp(sum_mask, min=1e-9)
+
+        tmp_embeddings = sum_embeddings / sum_mask
+        # Check NaN value in Embedding after applying divide
+        if check_nan(tmp_embeddings):
+            tmp_embeddings = pow_nan_filtering(tmp_embeddings)
+
+        gem_embeddings = torch.pow(tmp_embeddings, 1/p)
+        # Check NaN value in Embedding after applying torch.pow
+        if check_nan(gem_embeddings):
+            gem_embeddings = matmul_nan_filtering(gem_embeddings)
+        return gem_embeddings
+
 
 
 # Mean Pooling
