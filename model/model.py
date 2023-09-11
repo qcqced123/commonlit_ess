@@ -5,7 +5,7 @@ from torch import Tensor
 from transformers import AutoConfig, AutoModel
 
 import configuration
-from model.model_utils import freeze, reinit_topk, check_nan, nan_filtering
+from model.model_utils import freeze, reinit_topk
 
 
 class OneToOneModel(nn.Module):

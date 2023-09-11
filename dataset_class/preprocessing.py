@@ -195,23 +195,23 @@ def sequence_length(cfg: configuration.CFG, text_list: list) -> list:
     return length_list
 
 
-def spelling(text: str) -> int:
+def spelling(text: str, spellchecker: SpellChecker) -> int:
     """ return number of mis-spelling words in original text """
     wordlist = text.split()
     amount_miss = len(list(spellchecker.unknown(wordlist)))
     return amount_miss
 
 
-def add_spelling_dictionary(tokens: List[str]) -> None:
+def add_spelling_dictionary(tokens: List[str], spellchecker: SpellChecker, speller: Speller) -> None:
     """dictionary update for py-spell checker and autocorrect"""
     spellchecker.word_frequency.load_words(tokens)
     speller.nlp_data.update({token: 1000 for token in tokens})
 
 
-def spell_corrector(p_df: pd.DataFrame, s_df: pd.DataFrame) -> None:
+def spell_corrector(p_df: pd.DataFrame, s_df: pd.DataFrame, spellchecker: SpellChecker, speller: Speller) -> None:
     """ correct mis-spell words in summaries text """
     p_df['prompt_tokens'] = p_df['prompt_text'].apply(lambda x: word_tokenize(x))
-    p_df['prompt_tokens'].apply(lambda x: add_spelling_dictionary(x))
+    p_df['prompt_tokens'].apply(lambda x: add_spelling_dictionary(x, spellchecker, speller))
     s_df['fixed_text'] = s_df['text'].apply(lambda x: speller(x))
 
 
