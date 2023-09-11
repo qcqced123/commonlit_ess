@@ -76,7 +76,7 @@ def add_target_token(cfg: configuration.CFG, token: str) -> None:
     cfg.tokenizer.save_pretrained(f'{cfg.checkpoint_dir}/tokenizer/')
 
 
-def add_common_token(cfg: configuration.CFG, token: str) -> None:
+def add_anchor_token(cfg: configuration.CFG, token: str) -> None:
     """
     Add special token to pretrained tokenizer
     Args:
@@ -86,10 +86,10 @@ def add_common_token(cfg: configuration.CFG, token: str) -> None:
     special_token = token
     special_tokens_dict = {'additional_special_tokens': [f'{special_token}']}
     cfg.tokenizer.add_special_tokens(special_tokens_dict)
-    com_token_id = cfg.tokenizer(f'{special_token}', add_special_tokens=False)['input_ids'][0]
+    anchor_token_id = cfg.tokenizer(f'{special_token}', add_special_tokens=False)['input_ids'][0]
 
-    setattr(cfg.tokenizer, 'common_token', f'{special_token}')
-    setattr(cfg.tokenizer, 'common_token_id', com_token_id)
+    setattr(cfg.tokenizer, 'anchor_token', f'{special_token}')
+    setattr(cfg.tokenizer, 'anchor_token_id', anchor_token_id)
     cfg.tokenizer.save_pretrained(f'{cfg.checkpoint_dir}/tokenizer/')
 
 

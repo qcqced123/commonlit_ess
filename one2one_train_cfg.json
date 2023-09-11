@@ -24,10 +24,10 @@
     },
     "data_settings": {
         "n_folds": 7,
-        "max_len": 384,
+        "max_len": 2048,
         "epochs": 10,
-        "batch_size": 32,
-        "val_batch_size": 32,
+        "batch_size": 8,
+        "val_batch_size": 8,
         "smart_batch": false
     },
     "gradient_settings": {
@@ -71,9 +71,9 @@
         "init_weight": "orthogonal",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 4,
+        "num_freeze": 12,
         "reinit": true,
-        "num_reinit": 5,
+        "num_reinit": 1,
         "awp": false,
         "nth_awp_start_epoch": 2,
         "awp_eps": 1e-2,

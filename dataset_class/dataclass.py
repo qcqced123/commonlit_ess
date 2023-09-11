@@ -41,7 +41,7 @@ class OneToOneDataset(Dataset):
     def __getitem__(self, item: int) -> tuple[dict, Tensor]:
         # 1) load special token for making prompt sentence
         cls, sep = self.cfg.tokenizer.cls_token, self.cfg.tokenizer.sep_token
-        com, tar = self.cfg.tokenizer.common_token, self.cfg.tokenizer.tar_token
+        anc, tar = self.cfg.tokenizer.anc_token, self.cfg.tokenizer.tar_token
 
         # 2) load feature for making prompt sentence & LLM's inputs
         key = find_index(self.p_ids, self.s_ids[item])
@@ -53,7 +53,7 @@ class OneToOneDataset(Dataset):
             - summaries_text + prompt_question + prompt_text
             - summaries_text + prompt_title + prompt_text
         """
-        prompt = cls + com + self.p_questions[key] + com + self.p_titles[key] + com + sep + tar + self.s_texts[item] + tar + sep
+        prompt = cls + anc + self.p_questions[key] + anc + self.p_titles[key] + anc + sep + tar + self.s_texts[item] + tar + sep
         # prompt = cls + tar + self.s_texts[item] + tar + sep
         # prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + self.p_texts[key] + com + sep
         # prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + sep
