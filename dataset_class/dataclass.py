@@ -15,10 +15,10 @@ class OneToOneDataset(Dataset):
     """
     For Supervised Learning Pipeline, making "type 1" prompt sentence for LLMs Inputs
     This class have 2 functions
-        1) apply preprocessing for mis-spelling words in prompt texts & summaries texts (maybe later applying)
+        1) apply preprocessing for mis-spelling words in prompt texts & summaries texts (applied)
         2) make prompt sentence with no padding (x)
-        => this pipeline will be set hyper-params 'max_len' as at least 1920,
-        which is maximum value of all instance's prompt sentence length
+        => this pipeline will be set hyper-params 'max_len' as at least, which is maximum value of all instance's prompt sentence length
+        3) make masking Tensor for removing, special token & padding token
     Args:
         cfg: config module from configuration.py
         p_df: prompt train dataset, prompts_train.csv
@@ -30,7 +30,7 @@ class OneToOneDataset(Dataset):
         self.s_df = s_df
         self.p_ids = p_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
         self.p_titles = p_df.prompt_title.to_numpy()
-        self.p_texts = p_df.prompt_text.to_numpy()
+        self.p_texts = p_df.prompt_text.to_numpy()  # caused mis-matching distribution of Validation & Test
         self.p_questions = p_df.prompt_question.to_numpy()
         self.s_ids = s_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
         self.s_texts = s_df.text.to_numpy()
@@ -87,7 +87,6 @@ class OneToOneSmartBatchDataset(Dataset):
         self.contents = self.s_df.content.to_list()
         self.wordings = self.s_df.wording.to_list()
         self._prompts = self.s_df.prompt.apply(self.cfg.tokenizer.tokenize).apply(self.cfg.tokenizer.convert_tokens_to_ids).to_list()
-        # self._prompts = [self.tokenizing(self.cfg, prompt)["input_ids"] for prompt in self.prompts]
         self._labels = [[content, wording] for content, wording in zip(self.contents, self.wordings)]
 
     def __len__(self) -> int:

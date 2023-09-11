@@ -2,11 +2,11 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./saved/model/",
+        "checkpoint_dir": "./checkpoint/model/type21_smart_batch/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
-        "name": "PairwiseTrainer",
+        "name": "OneToManyTrainer",
         "loop": "train_loop",
         "dataset": "PairwiseDataset",
         "model_arch": "PairwiseModel",
