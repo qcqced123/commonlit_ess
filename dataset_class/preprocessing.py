@@ -7,7 +7,14 @@ from sklearn.model_selection import KFold, StratifiedKFold
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
+from nltk.tokenize import word_tokenize
+from autocorrect import Speller
+from spellchecker import SpellChecker
 from tqdm.auto import tqdm
+from typing import List
+
+speller = Speller(lang='en')
+spellchecker = SpellChecker()
 
 
 def kfold(df: pd.DataFrame, cfg) -> pd.DataFrame:
@@ -186,6 +193,26 @@ def sequence_length(cfg: configuration.CFG, text_list: list) -> list:
         tmp_text = tokenizing(cfg, text)['attention_mask']
         length_list.append(tmp_text.count(1))
     return length_list
+
+
+def spelling(text: str) -> int:
+    """ return number of mis-spelling words in original text """
+    wordlist = text.split()
+    amount_miss = len(list(spellchecker.unknown(wordlist)))
+    return amount_miss
+
+
+def add_spelling_dictionary(tokens: List[str]) -> None:
+    """dictionary update for py-spell checker and autocorrect"""
+    spellchecker.word_frequency.load_words(tokens)
+    speller.nlp_data.update({token: 1000 for token in tokens})
+
+
+def spell_corrector(p_df: pd.DataFrame, s_df: pd.DataFrame) -> None:
+    """ correct mis-spell words in summaries text """
+    p_df['prompt_tokens'] = p_df['prompt_text'].apply(lambda x: word_tokenize(x))
+    p_df['prompt_tokens'].apply(lambda x: add_spelling_dictionary(x))
+    s_df['fixed_text'] = s_df['text'].apply(lambda x: speller(x))
 
 
 def check_null(df: pd.DataFrame) -> pd.Series:
