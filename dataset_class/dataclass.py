@@ -54,9 +54,6 @@ class OneToOneDataset(Dataset):
             - summaries_text + prompt_title + prompt_text
         """
         prompt = cls + anc + self.p_questions[key] + anc + self.p_titles[key] + anc + sep + tar + self.s_texts[item] + tar + sep
-        # prompt = cls + tar + self.s_texts[item] + tar + sep
-        # prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + self.p_texts[key] + com + sep
-        # prompt += com + self.p_questions[key] + com + self.p_titles[key] + com + sep
         inputs = self.tokenizing(self.cfg, prompt)
         labels = torch.tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
         return inputs, labels
