@@ -156,7 +156,7 @@ def subsequent_tokenizing(cfg: configuration.CFG, text: str) -> any:
     inputs = cfg.tokenizer.encode_plus(
         text,
         padding=False,
-        truncation=True,
+        truncation=False,
         return_tensors=None,
         add_special_tokens=False,  # No need to special token to subsequent text sequence
     )

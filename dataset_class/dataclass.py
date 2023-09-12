@@ -1,5 +1,6 @@
-import gc
+import gc, ast, sys, random
 import pandas as pd
+import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, sampler, DataLoader
@@ -18,7 +19,7 @@ class OneToOneDataset(Dataset):
         1) apply preprocessing for mis-spelling words in prompt texts & summaries texts (applied)
         2) make prompt sentence with no padding (x)
         => this pipeline will be set hyper-params 'max_len' as at least, which is maximum value of all instance's prompt sentence length
-        3) make masking Tensor for removing, special token & padding token
+        3) (+add) make masking tensor for p-tuning
     Args:
         cfg: config module from configuration.py
         p_df: prompt train dataset, prompts_train.csv
@@ -46,12 +47,9 @@ class OneToOneDataset(Dataset):
         # 2) load feature for making prompt sentence & LLM's inputs
         key = find_index(self.p_ids, self.s_ids[item])
         """
-        3) make prompt sentence for LLM's inputs
-        laterly, check special token's position & numbers are affected to model's NLI performance
-            - summaries_text + prompt_question + prompt_title + prompt_text => 0
-            - summaries_text + prompt_question + prompt_title
-            - summaries_text + prompt_question + prompt_text
-            - summaries_text + prompt_title + prompt_text
+        3) make prompt sentence for LLM's inputs laterly, check special token's position & numbers
+        are affected to model's NLU performance
+            - prompt_question + prompt_title + summaries_text
         """
         prompt = cls + anc + self.p_questions[key] + anc + self.p_titles[key] + anc + sep + tar + self.s_texts[item] + tar + sep
         inputs = self.tokenizing(self.cfg, prompt)
@@ -67,7 +65,8 @@ class OneToOneSmartBatchDataset(Dataset):
         2) make prompt sentence with no padding (x)
         => this pipeline will be set hyper-params 'max_len' as at least 1920,
         which is maximum value of all instance's prompt sentence length
-        3) get torch.utils.data.DataLoader instance with smart-batching
+        3) (+add) make masking tensor for p-tuning
+        4) get torch.utils.data.DataLoader instance with smart-batching
     Notes:
         This class has same function with OneToOneDataset, but this class apply for smart-batching
         (not map-style dataset, but iterable-style dataset)
@@ -121,31 +120,47 @@ class OneToManyDataset(Dataset):
     """
     For Supervised Learning Pipeline, making "type 2" prompt sentence for LLMs Inputs
     This class have 4 functions
-        1) apply preprocessing for mis-spelling words in prompt texts & summaries texts (maybe later applying)
-        2) make prompt sentence with no padding
-        3) split original data schema into several subsets
-        4) random shuffle for each target instance (summaries texts, labels)
+        1) apply preprocessing for mis-spelling words in prompt texts & summaries texts
+        2) split original data schema into several subsets
+        3) make prompt sentence with no padding with random shuffle for each subset target instance
+            => fixed_summaries_text, labels
     Args:
         cfg: config module from configuration.py
-        p_df: prompt train dataset, prompts_train.csv
-        s_df: prompt train dataset, summaries_train.csv
+        s_df: OneToMany train dataframe, which is already applied
     """
-    def __init__(self, cfg: configuration.CFG, p_df: pd.DataFrame, s_df: pd.DataFrame) -> None:
+    def __init__(self, cfg: configuration.CFG, s_df: pd.DataFrame, is_valid: bool = False) -> None:
         self.cfg = cfg
-        self.p_df = p_df
         self.s_df = s_df
         self.tokenizing = tokenizing
         self.subsequent_tokenizing = subsequent_tokenizing
         self.adjust_sequences = adjust_sequences
-        self.p_ids = torch.from_numpy(self.p_df.prompt_id.to_numpy())  # which is connection key of prompt & summaries
-        self.p_titles = torch.from_numpy(self.p_df.prompt_title.to_numpy())
-        self.p_texts = torch.from_numpy(self.p_df.prompt_text.to_numpy())
-        self.p_questions = torch.from_numpy(self.p_df.prompt_question.to_numpy())
-        self.s_ids = torch.from_numpy(self.s_df.prompt_id.to_numpy())  # which is connection key of prompt & summaries
+        self.p_ids = self.s_df.prompt_id.to_numpy()
+        self.p_questions = self.s_df.prompt_question.to_numpy()
+        self.p_titles = self.s_df.prompt_title.to_numpy()
+        self.s_texts = self.s_df.fixed_text.to_numpy()
+        self.contents = self.s_df.content.to_numpy()
+        self.wordings = self.s_df.wording.to_numpy()
+        self._is_valid = is_valid
 
     def __len__(self) -> int:
-        return len(self.s_df)
+        return len(self.p_ids)
 
-    def __getitem__(self, item: int) -> dict:
-        pass
+    def __getitem__(self, item: int):
+        content, wording, text = np.array(self.contents[item]), np.array(self.wordings[item]), np.array(self.s_texts[item])
+
+        # Data Augmentation for train stage: random shuffle for target text in prompt
+        if not self._is_valid:
+            indices = list(range(len(content)))
+            random.shuffle(indices)
+            content = content[indices]
+            wording = wording[indices]
+            text = text[indices]
+
+        # Apply no padding
+        tmp_token_list = []
+
+
+
+
+
 
