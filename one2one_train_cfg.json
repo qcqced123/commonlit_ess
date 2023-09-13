@@ -32,7 +32,7 @@
     },
     "gradient_settings": {
         "amp_scaler": true,
-        "gradient_checkpoint": false,
+        "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
         "max_grad_norm": 1000

@@ -3,10 +3,8 @@ import pandas as pd
 import numpy as np
 import torch
 import configuration as configuration
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.tokenize import word_tokenize
 from autocorrect import Speller
 from spellchecker import SpellChecker
@@ -15,19 +13,6 @@ from typing import List
 
 speller = Speller(lang='en')
 spellchecker = SpellChecker()
-
-
-def kfold(df: pd.DataFrame, cfg) -> pd.DataFrame:
-    """ KFold """
-    fold = KFold(
-        n_splits=cfg.n_folds,
-        shuffle=True,
-        random_state=cfg.seed
-    )
-    df['fold'] = -1
-    for num, (tx, vx) in enumerate(fold.split(df)):
-        df.loc[vx, "fold"] = int(num)
-    return df
 
 
 def stratified_kfold(df: pd.DataFrame, cfg: configuration.CFG) -> pd.DataFrame:
@@ -228,50 +213,40 @@ def load_data(data_path: str) -> pd.DataFrame:
     return df
 
 
-def create_word_normalizer():
-    """
-    Create a function that normalizes a word.
-    """
-    ps = PorterStemmer()
-    lemmatizer = WordNetLemmatizer()
-
-    def normalize(word):
-        w = word.lower()
-        w = lemmatizer.lemmatize(w)
-        w = ps.stem(w)
-        return w
-    return normalize
+def no_char(text):
+    text = re.sub(r"\s+[a-zA-Z]\s+", " ", text)
+    text = re.sub(r"\^[a-zA-Z]\s+", " ", text)
+    text = re.sub(r"\s+[a-zA-Z]$", " ", text)
+    return text
 
 
-def __normalize_words(titles: list) -> list:
-    """
-    Normalize a list of words
-    1) Remove stop words
-    2) Apply Porter Stemmer, Lemmatizer
-    """
-    stop_words = set(stopwords.words('english'))
-    normalizer = create_word_normalizer()
-    titles = [normalizer(t) for t in titles if t not in stop_words]
-    return titles
+def no_html_tags(text):
+    return re.sub("<.*?>", " ", text)
 
 
-def normalize_words(words: np.ndarray, unique=True) -> list:
-    """
-    Normalize a list of words
-    1) Apply __normalize_word function
-    2) Apply Regular Expression to remove special characters
-    """
-    if type(words) is str:
-        words = [words]
-    sep_re = r'[\s\(\){}\[\];,\.]+'
-    num_re = r'\d'
-    words = re.split(sep_re, ' '.join(words).lower())
-    words = [w for w in words if len(w) >= 3 and not re.match(num_re, w)]
-    if unique:
-        words = list(set(words))
-        words = set(__normalize_words(words))
-    else:
-        words = __normalize_words(words)
-    return words
+def no_multi_spaces(text):
+    return re.sub(r"\s+", " ", text, flags=re.I)
 
 
+def underscore_to_space(text: str):
+    text = text.replace("_", " ")
+    text = text.replace("-", " ")
+    return text
+
+
+def preprocess_text(source):
+    # Remove all the special characters
+    source = re.sub(r'\W', ' ', str(source))
+    source = re.sub(r'^b\s+', '', source)
+    source = source.lower()
+    return source
+
+
+def cleaning_words(text: str) -> str:
+    """ Apply all of cleaning process to text data """
+    tmp_text = no_html_tags(text)
+    tmp_text = underscore_to_space(tmp_text)
+    tmp_text = no_char(tmp_text)
+    tmp_text = preprocess_text(tmp_text)
+    tmp_text = no_multi_spaces(tmp_text)
+    return tmp_text

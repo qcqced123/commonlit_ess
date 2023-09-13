@@ -3,12 +3,12 @@ import pandas as pd
 import numpy as np
 import torch
 from torch import Tensor
-from torch.utils.data import Dataset, sampler, DataLoader
-from typing import List, Tuple, Dict
+from torch.utils.data import Dataset, DataLoader
+from typing import List, Tuple
 
 import configuration
-from dataset_class.preprocessing import tokenizing, adjust_sequences
-from dataset_class.preprocessing import subsequent_tokenizing, subsequent_decode, sequence_length, find_index
+from dataset_class.preprocessing import tokenizing, adjust_sequences, subsequent_decode
+from dataset_class.preprocessing import subsequent_tokenizing, subsequent_decode, sequence_length, find_index, cleaning_words
 from trainer.trainer_utils import SmartBatchingSampler, SmartBatchingCollate
 
 
@@ -133,6 +133,7 @@ class OneToManyDataset(Dataset):
         self.s_df = s_df
         self.tokenizing = tokenizing
         self.subsequent_tokenizing = subsequent_tokenizing
+        self.subsequent_decode = subsequent_decode
         self.adjust_sequences = adjust_sequences
         self.p_ids = self.s_df.prompt_id.to_numpy()
         self.p_questions = self.s_df.prompt_question.to_numpy()
@@ -146,8 +147,9 @@ class OneToManyDataset(Dataset):
         return len(self.p_ids)
 
     def __getitem__(self, item: int):
-        content, wording, text = np.array(self.contents[item]), np.array(self.wordings[item]), np.array(self.s_texts[item])
-
+        content, wording = ast.literal_eval(self.contents[item]), ast.literal_eval(self.wordings[item])
+        text = ast.literal_eval(self.s_texts[item])
+        p_question, p_title = self.p_questions[item], self.p_titles[item]
         # Data Augmentation for train stage: random shuffle for target text in prompt
         if not self._is_valid:
             indices = list(range(len(content)))
@@ -156,11 +158,45 @@ class OneToManyDataset(Dataset):
             wording = wording[indices]
             text = text[indices]
 
-        # Apply no padding
+        # Apply text normalize, cleaning, no padding
+        anchor_length = len(self.subsequent_tokenizing(self.cfg, cleaning_words(p_question))) + len(self.subsequent_tokenizing(self.cfg, cleaning_words(p_title)))
+        fixed_length = len(text) + 5 + anchor_length
         tmp_token_list = []
+        for idx in range(len(content)):
+            tmp_token_list.append(self.subsequent_tokenizing(self.cfg, cleaning_words(text[idx])))
+        adjust_inputs, _ = adjust_sequences(tmp_token_list, (self.cfg.max_len - fixed_length))
+        for idx in range(len(content)):
+            text[idx] = self.subsequent_decode(self.cfg, adjust_inputs[idx])
 
+        # Make prompt sequence
+        cls, sep = self.cfg.tokenizer.cls_token, self.cfg.tokenizer.sep_token
+        anc, tar = self.cfg.tokenizer.anchor_token, self.cfg.tokenizer.tar_token
+        prompts = cls + p_title + anc + p_question + anc + sep
+        for targets in text:
+            prompts += targets + tar
+        prompts += sep
+        inputs = self.tokenizing(self.cfg, prompts)
 
-
-
-
-
+        # Make masking tensor
+        scores = np.array(list(zip(content, wording)))  # result of zipping content, wording array
+        target_mask = np.zeros(len([token for token in inputs['input_ids'] if token != 0]))  # not padding token
+        label = torch.full(
+            [len([token for token in inputs['input_ids'] if token != 0])], -1, dtype=torch.float
+        )
+        cnt_anc, cnt_tar, cnt_sep, nth_target, prev_i = 0, 0, 0, -1, -1
+        for i, input_id in enumerate(inputs['input_ids']):
+            if input_id == self.cfg.tokenizer.tar_token_id:
+                cnt_tar += 1
+                if cnt_tar == len(text):
+                    break
+            if input_id == self.cfg.tokenizer.sep_token_id:
+                cnt_sep += 1
+            # count number of target tokens
+            if cnt_sep == 1 and input_id not in [self.cfg.tokenizer.pad_token_id, self.cfg.tokenizer.sep_token_id,
+                                                 self.cfg.tokenizer.tar_token_id, self.cfg.tokenizer.anchor_token_id]:
+                if (i - prev_i) > 1:
+                    nth_target += 1
+                label[i] = scores[nth_target]
+                target_mask[i] = 1
+                prev_i = i
+        return inputs, target_mask, label
