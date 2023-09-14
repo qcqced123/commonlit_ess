@@ -3,7 +3,7 @@ import torch.nn as nn
 import model.pooling as pooling
 from torch import Tensor
 from transformers import AutoConfig, AutoModel
-
+from typing import List, Dict
 import configuration
 from model.model_utils import freeze, reinit_topk
 
@@ -90,7 +90,8 @@ class OneToManyModel(nn.Module):
     """
     Model Class for OneToMany Dataschema Pipeline
     This class apply reinit_top_k encoder's weight, init weights of fine-tune stage (fully-connect, regressor-head)
-    And then, pooling each sub-sequence embedding which is meaning that each unique instance
+    And then, pooling each sub-sequence embedding which is meaning that each unique instance, this pipeline doesn't use pooling
+    after calculate logit of each token embedding, we torch.mean(all of logit), So not need to pooling method
     Args:
         cfg: configuration.CFG
     """
@@ -106,7 +107,7 @@ class OneToManyModel(nn.Module):
             config=self.auto_cfg
         )
         self.model.resize_token_embeddings(len(self.cfg.tokenizer))
-        self.pooling = getattr(pooling, cfg.pooling)(self.auto_cfg)
+        # self.pooling = getattr(pooling, cfg.pooling)(self.auto_cfg)
         self.fc = nn.Linear(self.auto_cfg.hidden_size, 2)  # Target Class: content, wording
         if self.cfg.load_pretrained:
             self.model.load_state_dict(
@@ -151,15 +152,13 @@ class OneToManyModel(nn.Module):
             module.weight.data.fill_(1.0)
             module.bias.data.zero_()
 
-    def feature(self, inputs: dict):
+    def feature(self, inputs: Dict):
         outputs = self.model(**inputs)
         return outputs
 
-    def forward(self, inputs: dict) -> list[Tensor]:
+    def forward(self, inputs: Dict) -> List[Tensor]:
+        """ Remove pooling layer """
         outputs = self.feature(inputs)
-        feature = outputs.last_hidden_state
-        if self.cfg.pooling == 'WeightedLayerPooling':
-            feature = outputs.hidden_states
-        embedding = self.pooling(feature, inputs['attention_mask'])
-        logit = self.fc(embedding)
+        embedding = outputs.last_hidden_state
+        logit = self.fc(embedding).squeeze(-1)
         return logit

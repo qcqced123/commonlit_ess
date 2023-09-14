@@ -40,5 +40,5 @@ if __name__ == '__main__':
     #     CustomArgs(['--bs', '--batch_size'], type=int, target='dataset_class;args;batch_size')
     # ]
     # cli_config = ConfigParser.from_args(args, options)
-    main('one2one_train_cfg.json', CFG)
+    main('one2many_train_cfg.json', CFG)
 
