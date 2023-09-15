@@ -14,7 +14,7 @@ g.manual_seed(CFG.seed)
 def train_loop(cfg: CFG) -> None:
     """ Base Trainer Loop Function """
     fold_list = [i for i in range(cfg.n_folds)]
-    for fold in tqdm(fold_list):
+    for fold in tqdm(fold_list[5:6]):
         print(f'============== {fold}th Fold Train & Validation ==============')
         wandb.init(
             project=cfg.name,
@@ -24,7 +24,7 @@ def train_loop(cfg: CFG) -> None:
             job_type='train',
             entity="qcqced"
         )
-        early_stopping = EarlyStopping(mode=cfg.stop_mode)
+        early_stopping = EarlyStopping(mode=cfg.stop_mode, patience=5)
         early_stopping.detecting_anomaly()
 
         val_score_max = np.inf
