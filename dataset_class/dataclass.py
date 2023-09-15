@@ -178,14 +178,6 @@ class OneToManyDataset(Dataset):
         inputs = self.tokenizing(self.cfg, prompts)
 
         # Make masking tensor
-        # scores = np.array(list(zip(content, wording)))  # result of zipping content, wording array
-        # target_mask = np.zeros(len([token for token in inputs['input_ids'] if token != 0]))  # not padding token
-        # label_content = torch.full(
-        #     [len([token for token in inputs['input_ids'] if token != 0])], -1, dtype=torch.float
-        # )
-        # label_wording = torch.full(
-        #     [len([token for token in inputs['input_ids'] if token != 0])], -1, dtype=torch.float
-        # )
         target_mask = np.zeros(len([token for token in inputs['input_ids']]))  # not padding token
         label_content = torch.full(
             [len([token for token in inputs['input_ids']])], -1, dtype=torch.float
