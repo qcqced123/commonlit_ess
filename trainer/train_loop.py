@@ -7,7 +7,6 @@ import trainer.trainer as trainer
 from configuration import CFG
 from trainer.trainer_utils import get_name, EarlyStopping
 from utils.helper import class2dict
-
 g = torch.Generator()
 g.manual_seed(CFG.seed)
 
@@ -35,20 +34,28 @@ def train_loop(cfg: CFG) -> None:
 
         for epoch in range(cfg.epochs):
             print(f'[{epoch + 1}/{cfg.epochs}] Train & Validation')
-            train_loss, grad_norm, lr = train_input.train_fn(
+            train_loss, c_loss, w_loss, grad_norm, lr = train_input.train_fn(
                 loader_train, model, criterion, optimizer, lr_scheduler, epoch, awp
             )
-            valid_loss = train_input.valid_fn(
+            valid_loss, v_c_loss, v_w_loss = train_input.valid_fn(
                 loader_valid, model, val_criterion
             )
             wandb.log({
                 '<epoch> Train Loss': train_loss,
+                '<epoch> Train Content Loss': c_loss,
+                '<epoch> Train Wording Loss': w_loss,
                 '<epoch> Valid Loss': valid_loss,
+                '<epoch> Valid Content Loss': v_c_loss,
+                '<epoch> Valid Wording Loss': v_w_loss,
                 '<epoch> Gradient Norm': grad_norm,
                 '<epoch> lr': lr
             })
             print(f'[{epoch + 1}/{cfg.epochs}] Train Loss: {np.round(train_loss, 4)}')
+            print(f'[{epoch + 1}/{cfg.epochs}] Train Content Loss: {np.round(c_loss, 4)}')
+            print(f'[{epoch + 1}/{cfg.epochs}] Train Wording Loss: {np.round(w_loss, 4)}')
             print(f'[{epoch + 1}/{cfg.epochs}] Valid Loss: {np.round(valid_loss, 4)}')
+            print(f'[{epoch + 1}/{cfg.epochs}] Valid Content Loss: {np.round(v_c_loss, 4)}')
+            print(f'[{epoch + 1}/{cfg.epochs}] Valid Wording Loss: {np.round(v_w_loss, 4)}')
             print(f'[{epoch + 1}/{cfg.epochs}] Gradient Norm: {np.round(grad_norm, 4)}')
             print(f'[{epoch + 1}/{cfg.epochs}] lr: {lr}')
 

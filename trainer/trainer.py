@@ -1,5 +1,6 @@
 import gc
 import torch
+import numpy as np
 import pandas as pd
 import transformers
 
@@ -13,7 +14,8 @@ import model.loss as model_loss
 import model.model as model_arch
 from configuration import CFG
 from dataset_class.preprocessing import load_data
-from trainer.trainer_utils import get_optimizer_grouped_parameters, get_scheduler, collate, AverageMeter, AWP, get_dataloader
+from trainer.trainer_utils import get_optimizer_grouped_parameters, get_scheduler, collate, one2many_collate
+from trainer.trainer_utils import AverageMeter, AWP, get_dataloader
 
 
 class OneToOneTrainer:
@@ -365,36 +367,41 @@ class OneToManyTrainer:
             )
         return model, criterion, val_criterion, optimizer, lr_scheduler, awp
 
-    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp: None) -> tuple[Tensor, Tensor, Tensor]:
+    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp: None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Tensor, Tensor]:
         """ function for train loop """
         scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.amp_scaler)
-        losses = AverageMeter()
+        losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
         model.train()
-        for step, (inputs, _, labels) in enumerate(tqdm(loader_train)):
+        for step, (inputs, _, label_content, label_wording) in enumerate(tqdm(loader_train)):
             optimizer.zero_grad()
-            inputs = collate(inputs)  # need to check this method, when applying smart batching
+            inputs, label_content, label_wording = one2many_collate(inputs, label_content, label_wording)  # need to check this method, when applying smart batching
 
             for k, v in inputs.items():
                 inputs[k] = v.to(self.cfg.device)  # train to gpu
-            labels = labels.to(self.cfg.device)  # Two target values to GPU
-            batch_size = labels.size(0)
+            label_content = label_content.to(self.cfg.device)  # Two target values to GPU
+            label_wording = label_wording.to(self.cfg.device)  # Two target values to GPU
+            batch_size = label_content.size(0)
 
             with torch.cuda.amp.autocast(enabled=self.cfg.amp_scaler):
-                preds = model(inputs)
-                loss = criterion(preds.view(-1, 1), labels.view(-1, 1))
-                mask = (labels.view(-1, 1) != -1)
-                loss = torch.masked_select(loss, mask).mean()  # reduction = mean
+                pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, :, 0], pred_list[:, :, 1]
+                c_loss, w_loss = criterion(c_pred.view(-1, 1), label_content.view(-1, 1)), criterion(w_pred.view(-1, 1), label_wording.view(-1, 1))
+                c_mask, w_mask = (label_content.view(-1, 1) != -1), (label_wording.view(-1, 1) != -1)
+                c_loss, w_loss = torch.masked_select(c_loss, c_mask).mean(), torch.masked_select(w_loss, w_mask).mean()  # reduction = mean
+                loss = c_loss + w_loss
 
             if self.cfg.n_gradient_accumulation_steps > 1:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
 
             scaler.scale(loss).backward()
             losses.update(loss.detach().cpu().numpy(), batch_size)  # Must do detach() for avoid memory leak
+            c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+            w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
-            if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
-                loss = awp.attack_backward(inputs, labels)
-                scaler.scale(loss).backward()
-                awp._restore()
+            # if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
+            #     loss = awp.attack_backward(inputs, labels)
+            #     scaler.scale(loss).backward()
+            #     awp._restore()
 
             if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
                 scaler.unscale_(optimizer)
@@ -406,39 +413,41 @@ class OneToManyTrainer:
                 scaler.update()
                 scheduler.step()
 
-            del inputs, labels, preds, loss
+            del inputs, label_content, label_wording, loss, c_loss, w_loss
             torch.cuda.empty_cache()
             gc.collect()
 
-        train_loss = losses.avg
         grad_norm = grad_norm.detach().cpu().numpy()
-        return train_loss, grad_norm, scheduler.get_lr()[0]
+        return losses.avg, c_losses.avg, w_losses.avg, grad_norm, scheduler.get_lr()[0]
 
-    def valid_fn(self, loader_valid, model, val_criterion) -> Tensor:
-        """ function for validation loop, cv metric same as cv loss
-        so no need to implement further more
-        """
-        valid_losses = AverageMeter()
+    def valid_fn(self, loader_valid, model, val_criterion) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """function for validation loop, cv metric same as cv loss, so no need to implement further more"""
+        valid_losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
         model.eval()
         with torch.no_grad():
-            for step, (inputs, _, labels) in enumerate(tqdm(loader_valid)):
-                inputs = collate(inputs)  # need to check this method, when applying smart batching
+            for step, (inputs, _, label_content, label_wording) in enumerate(tqdm(loader_valid)):
+                inputs, label_content, label_wording = one2many_collate(inputs, label_content, label_wording)  # need to check this method, when applying smart batching
 
                 for k, v in inputs.items():
-                    inputs[k] = v.to(self.cfg.device)
-                labels = labels.to(self.cfg.device)
-                batch_size = labels.size(0)
+                    inputs[k] = v.to(self.cfg.device)  # train to gpu
+                label_content = label_content.to(self.cfg.device)  # Two target values to GPU
+                label_wording = label_wording.to(self.cfg.device)  # Two target values to GPU
+                batch_size = label_content.size(0)
 
-                preds = model(inputs)
-                valid_loss = val_criterion(preds.view(-1, 1), labels.view(-1, 1))
-                mask = (labels.view(-1, 1) != -1)
-                valid_loss = torch.masked_select(valid_loss, mask).mean()
+                pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, :, 0], pred_list[:, :, 1]
 
+                c_loss, w_loss = val_criterion(c_pred.view(-1, 1), label_content.view(-1, 1)), val_criterion(w_pred.view(-1, 1), label_wording.view(-1, 1))
+                c_mask, w_mask = (label_content.view(-1, 1) != -1), (label_wording.view(-1, 1) != -1)
+                c_loss, w_loss = torch.masked_select(c_loss, c_mask).mean(), torch.masked_select(w_loss, w_mask).mean()  # reduction = mean
+
+                valid_loss = (c_loss + w_loss) / 2  # for calculating MCRMSE
                 valid_losses.update(valid_loss.detach().cpu().numpy(), batch_size)
+                c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+                w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
-            del inputs, labels, preds, valid_loss
+            del inputs, label_content, label_wording, valid_loss, c_loss, w_loss
             torch.cuda.empty_cache()
             gc.collect()
 
-        valid_loss = valid_losses.avg
-        return valid_loss
+        return valid_losses.avg, c_losses.avg, w_losses.avg

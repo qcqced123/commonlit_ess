@@ -55,6 +55,15 @@ def collate(inputs) -> Dict:
     return inputs
 
 
+def one2many_collate(inputs, label1, label2) -> Tuple[Dict, Tensor, Tensor]:
+    """ Descending sort inputs by length of sequence """
+    mask_len = int(inputs["attention_mask"].sum(axis=1).max())
+    for k, v in inputs.items():
+        inputs[k] = inputs[k][:, :mask_len]
+    label1, label2 = label1[:, :mask_len], label2[:, :mask_len]
+    return inputs, label1, label2
+
+
 def get_dataloader(cfg, dataset: Dataset, generator: torch.Generator, shuffle: bool = True, collate_fn=None, sampler=None, drop_last: bool = True) -> DataLoader:
     """ function for initializing torch.utils.data.DataLoader Module """
     dataloader = DataLoader(

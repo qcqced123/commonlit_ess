@@ -2,7 +2,7 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/type21_smart_batch/",
+        "checkpoint_dir": "./checkpoint/model/type21/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
@@ -25,7 +25,7 @@
     "data_settings": {
         "n_folds": 7,
         "max_len": 2048,
-        "epochs": 10,
+        "epochs": 30,
         "batch_size": 8,
         "val_batch_size": 8
     },
@@ -37,7 +37,7 @@
         "max_grad_norm": 1000
     },
     "loss_options": {
-        "loss_fn": "RMSELoss",
+        "loss_fn": "SmoothL1Loss",
         "val_loss_fn": "MCRMSELoss",
         "reduction": "mean"
     },
@@ -57,7 +57,7 @@
     "scheduler_options": {
         "scheduler": "cosine_annealing",
         "batch_scheduler": true,
-        "num_cycles": 2,
+        "num_cycles": 6,
         "warmup_ratio": 0.1
     },
     "swa_options": {
@@ -67,12 +67,12 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "init_weight": "orthogonal",
+        "init_weight": "normal",
         "stop_mode": "min",
         "freeze": true,
         "num_freeze": 12,
         "reinit": true,
-        "num_reinit": 1,
+        "num_reinit": 5,
         "awp": false,
         "nth_awp_start_epoch": 2,
         "awp_eps": 1e-2,

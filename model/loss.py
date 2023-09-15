@@ -36,7 +36,7 @@ class MCRMSELoss(nn.Module):
         reduction: str, reduction method of loss
         num_scored: int, number of scored target values
     """
-    def __init__(self, reduction: str, num_scored: int = 2) -> None:
+    def __init__(self, reduction: str, num_scored: int = 1) -> None:
         super().__init__()
         self.RMSE = RMSELoss(reduction=reduction)
         self.num_scored = num_scored

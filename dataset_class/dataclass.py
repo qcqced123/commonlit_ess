@@ -147,8 +147,8 @@ class OneToManyDataset(Dataset):
         return len(self.p_ids)
 
     def __getitem__(self, item: int):
-        content, wording = ast.literal_eval(self.contents[item]), ast.literal_eval(self.wordings[item])
-        text = ast.literal_eval(self.s_texts[item])
+        content, wording = np.array(ast.literal_eval(self.contents[item])), np.array(ast.literal_eval(self.wordings[item]))
+        text = np.array(ast.literal_eval(self.s_texts[item]))
         p_question, p_title = self.p_questions[item], self.p_titles[item]
         # Data Augmentation for train stage: random shuffle for target text in prompt
         if not self._is_valid:
@@ -178,10 +178,20 @@ class OneToManyDataset(Dataset):
         inputs = self.tokenizing(self.cfg, prompts)
 
         # Make masking tensor
-        scores = np.array(list(zip(content, wording)))  # result of zipping content, wording array
-        target_mask = np.zeros(len([token for token in inputs['input_ids'] if token != 0]))  # not padding token
-        label = torch.full(
-            [len([token for token in inputs['input_ids'] if token != 0])], -1, dtype=torch.float
+        # scores = np.array(list(zip(content, wording)))  # result of zipping content, wording array
+        # target_mask = np.zeros(len([token for token in inputs['input_ids'] if token != 0]))  # not padding token
+        # label_content = torch.full(
+        #     [len([token for token in inputs['input_ids'] if token != 0])], -1, dtype=torch.float
+        # )
+        # label_wording = torch.full(
+        #     [len([token for token in inputs['input_ids'] if token != 0])], -1, dtype=torch.float
+        # )
+        target_mask = np.zeros(len([token for token in inputs['input_ids']]))  # not padding token
+        label_content = torch.full(
+            [len([token for token in inputs['input_ids']])], -1, dtype=torch.float
+        )
+        label_wording = torch.full(
+            [len([token for token in inputs['input_ids']])], -1, dtype=torch.float
         )
         cnt_anc, cnt_tar, cnt_sep, nth_target, prev_i = 0, 0, 0, -1, -1
         for i, input_id in enumerate(inputs['input_ids']):
@@ -196,7 +206,8 @@ class OneToManyDataset(Dataset):
                                                  self.cfg.tokenizer.tar_token_id, self.cfg.tokenizer.anchor_token_id]:
                 if (i - prev_i) > 1:
                     nth_target += 1
-                label[i] = scores[nth_target]
+                label_content[i], label_wording[i] = content[nth_target], wording[nth_target]
                 target_mask[i] = 1
                 prev_i = i
-        return inputs, target_mask, label
+
+        return inputs, target_mask, label_content, label_wording
