@@ -1,0 +1,105 @@
+{
+    "os": "Linux-6.2.0-32-generic-x86_64-with-glibc2.35",
+    "python": "3.9.13",
+    "heartbeatAt": "2023-09-17T03:08:46.073695",
+    "startedAt": "2023-09-17T03:08:45.419219",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/qcqced/\ubc14\ud0d5\ud654\uba74/GitHub/commonlit_ess/train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "https://github.com/qcqced123/commonlit_ess.git",
+        "commit": "cee6174fd96c4ec7bb71e54bc6a2a08f8d51b23a"
+    },
+    "email": "qcqced123@gmail.com",
+    "root": "/home/qcqced/\ubc14\ud0d5\ud654\uba74/GitHub/commonlit_ess",
+    "host": "qcqced-B550M-H",
+    "username": "qcqced",
+    "executable": "/home/qcqced/anaconda3/bin/python",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 3.0698333333333334,
+        "min": 2200.0,
+        "max": 3700.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2.2,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 2.874,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 2.2,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4.006,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 3.542,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 2.883,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 3.193,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 2.91,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 2.971,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 3.589,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 2.909,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 3.561,
+            "min": 2200.0,
+            "max": 3700.0
+        }
+    ],
+    "disk": {
+        "total": 680.4048233032227,
+        "used": 88.20450210571289
+    },
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3090",
+            "memory_total": 25769803776
+        }
+    ],
+    "memory": {
+        "total": 23.36150360107422
+    }
+}

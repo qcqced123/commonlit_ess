@@ -10,7 +10,7 @@ from dataset_class.preprocessing import add_target_token, add_anchor_token
 warnings.filterwarnings('ignore')
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["LRU_CACHE_CAPACITY"] = "1"
-
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "garbage_collection_threshold:0.8,max_split_size_mb:512"
 check_library(True)
 all_type_seed(CFG, True)
 
