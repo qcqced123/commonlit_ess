@@ -23,7 +23,7 @@ batch_scheduler:
   value: true
 batch_size:
   desc: null
-  value: 4
+  value: 2
 betas:
   desc: null
   value:
@@ -61,7 +61,7 @@ gradient_checkpoint:
   value: true
 init_weight:
   desc: null
-  value: normal
+  value: xavier_uniform
 layerwise_adam_epsilon:
   desc: null
   value: 1.0e-06
@@ -208,12 +208,10 @@ _wandb:
     huggingface_version: 4.31.0
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1694930208.072538
+    start_time: 1694946448.969123
     t:
       1:
       - 1
-      - 2
-      - 3
       - 5
       - 11
       - 49
@@ -229,7 +227,6 @@ _wandb:
       - 53
       - 55
       3:
-      - 2
       - 13
       - 16
       - 23

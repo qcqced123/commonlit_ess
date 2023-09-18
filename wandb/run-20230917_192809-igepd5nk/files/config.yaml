@@ -61,7 +61,7 @@ gradient_checkpoint:
   value: true
 init_weight:
   desc: null
-  value: normal
+  value: xavier_uniform
 layerwise_adam_epsilon:
   desc: null
   value: 1.0e-06
@@ -208,12 +208,10 @@ _wandb:
     huggingface_version: 4.31.0
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1694930208.072538
+    start_time: 1694946489.314611
     t:
       1:
       - 1
-      - 2
-      - 3
       - 5
       - 11
       - 49

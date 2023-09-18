@@ -67,7 +67,7 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "init_weight": "normal",
+        "init_weight": "xavier_uniform",
         "stop_mode": "min",
         "freeze": true,
         "num_freeze": 12,
