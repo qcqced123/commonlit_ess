@@ -24,20 +24,20 @@
     },
     "data_settings": {
         "n_folds": 7,
-        "max_len": 2560,
+        "max_len": 3096,
         "epochs": 30,
         "batch_size": 4,
         "val_batch_size": 4
     },
     "gradient_settings": {
-        "amp_scaler":  true,
+        "amp_scaler": true,
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 1000
+        "max_grad_norm": 2000
     },
     "loss_options": {
-        "loss_fn": "SmoothL1Loss",
+        "loss_fn": "RMSELoss",
         "val_loss_fn": "MCRMSELoss",
         "reduction": "mean"
     },
@@ -50,7 +50,7 @@
         "layerwise_lr": 5e-5,
         "layerwise_lr_decay": 0.9,
         "layerwise_weight_decay": 1e-2,
-        "layerwise_adam_epsilon": 1e-6,
+        "layerwise_adam_epsilon": 1e-8,
         "layerwise_use_bertadam": false,
         "betas": [0.9, 0.999]
     },
@@ -67,12 +67,12 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "init_weight": "xavier_uniform",
+        "init_weight": "orthogonal",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 12,
+        "num_freeze": 4,
         "reinit": true,
-        "num_reinit": 5,
+        "num_reinit": 1,
         "awp": false,
         "nth_awp_start_epoch": 2,
         "awp_eps": 1e-2,

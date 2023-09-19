@@ -18,7 +18,7 @@ class SmoothL1Loss(nn.Module):
 
 
 class RMSELoss(nn.Module):
-    def __init__(self, reduction, eps=1e-6):
+    def __init__(self, reduction, eps=1e-8):
         super().__init__()
         self.mse = nn.MSELoss(reduction=reduction)
         self.eps = eps # If MSE == 0, We need eps
