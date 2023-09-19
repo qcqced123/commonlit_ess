@@ -408,7 +408,8 @@ class OneToManyTrainer:
                 scaler.unscale_(optimizer)
                 grad_norm = torch.nn.utils.clip_grad_norm(
                     model.parameters(),
-                    self.cfg.max_grad_norm * self.cfg.n_gradient_accumulation_steps
+                    self.cfg.max_grad_norm * self.cfg.n_gradient_accumulation_steps,
+                    foreach=True
                 )
                 scaler.step(optimizer)
                 scaler.update()
