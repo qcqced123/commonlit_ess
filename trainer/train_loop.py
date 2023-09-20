@@ -24,7 +24,7 @@ def train_loop(cfg: CFG) -> None:
             job_type='train',
             entity="qcqced"
         )
-        early_stopping = EarlyStopping(mode=cfg.stop_mode, patience=5)
+        early_stopping = EarlyStopping(mode=cfg.stop_mode, patience=7)
         early_stopping.detecting_anomaly()
 
         val_score_max = np.inf
