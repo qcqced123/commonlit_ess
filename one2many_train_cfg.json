@@ -2,7 +2,7 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/k20_type21/",
+        "checkpoint_dir": "./checkpoint/model/k15_type2_fold4/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
@@ -23,18 +23,18 @@
         "num_workers": 4
     },
     "data_settings": {
-        "n_folds": 7,
-        "max_len": 2560,
+        "n_folds": 4,
+        "max_len": 2048,
         "epochs": 30,
-        "batch_size": 4,
-        "val_batch_size": 4
+        "batch_size": 8,
+        "val_batch_size": 8
     },
     "gradient_settings": {
         "amp_scaler": true,
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 1000
+        "max_grad_norm": 500
     },
     "loss_options": {
         "loss_fn": "RMSELoss",
@@ -67,12 +67,12 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "init_weight": "orthogonal",
+        "init_weight": "xavier_uniform",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 4,
+        "num_freeze": 1,
         "reinit": true,
-        "num_reinit": 2,
+        "num_reinit": 5,
         "awp": false,
         "nth_awp_start_epoch": 2,
         "awp_eps": 1e-2,

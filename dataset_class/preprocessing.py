@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import torch
 import configuration as configuration
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, GroupKFold
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from nltk.tokenize import word_tokenize
 from autocorrect import Speller
@@ -13,6 +13,17 @@ from typing import List
 
 speller = Speller(lang='en')
 spellchecker = SpellChecker()
+
+
+def group_kfold(df: pd.DataFrame, cfg: configuration.CFG) -> pd.DataFrame:
+    """ GroupKFold """
+    fold = GroupKFold(
+        n_splits=cfg.n_folds,
+    )
+    df['fold'] = -1
+    for num, (tx, vx) in enumerate(fold.split(X=df, groups=df['prompt_id'])):
+        df.loc[vx, "fold"] = int(num)
+    return df
 
 
 def stratified_kfold(df: pd.DataFrame, cfg: configuration.CFG) -> pd.DataFrame:

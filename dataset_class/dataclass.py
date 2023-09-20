@@ -43,7 +43,6 @@ class OneToOneDataset(Dataset):
         # 1) load special token for making prompt sentence
         cls, sep = self.cfg.tokenizer.cls_token, self.cfg.tokenizer.sep_token
         anc, tar = self.cfg.tokenizer.anc_token, self.cfg.tokenizer.tar_token
-
         # 2) load feature for making prompt sentence & LLM's inputs
         key = find_index(self.p_ids, self.s_ids[item])
         """
@@ -51,7 +50,9 @@ class OneToOneDataset(Dataset):
         are affected to model's NLU performance
             - prompt_question + prompt_title + summaries_text
         """
-        prompt = cls + anc + self.p_questions[key] + anc + self.p_titles[key] + anc + sep + tar + self.s_texts[item] + tar + sep
+        prompt = cls + self.p_questions[key] + anc + self.p_titles[key] + anc + sep
+        prompt += cleaning_words(self.s_texts[item]) + tar + sep
+
         inputs = self.tokenizing(self.cfg, prompt)
         labels = torch.tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
         return inputs, labels
