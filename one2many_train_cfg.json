@@ -57,7 +57,7 @@
     "scheduler_options": {
         "scheduler": "cosine_annealing",
         "batch_scheduler": true,
-        "num_cycles": 3,
+        "num_cycles": 6,
         "warmup_ratio": 0.1
     },
     "swa_options": {
@@ -70,7 +70,7 @@
         "init_weight": "xavier_uniform",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 1,
+        "num_freeze": 8,
         "reinit": true,
         "num_reinit": 5,
         "awp": false,
