@@ -34,10 +34,10 @@
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 500
+        "max_grad_norm": 2000
     },
     "loss_options": {
-        "loss_fn": "RMSELoss",
+        "loss_fn": "SmoothL1Loss",
         "val_loss_fn": "MCRMSELoss",
         "reduction": "mean"
     },
@@ -70,7 +70,7 @@
         "init_weight": "xavier_uniform",
         "stop_mode": "min",
         "freeze": true,
-        "num_freeze": 8,
+        "num_freeze": 4,
         "reinit": true,
         "num_reinit": 5,
         "awp": false,
