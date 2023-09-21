@@ -34,7 +34,7 @@ class OneToOneDataset(Dataset):
         self.p_texts = p_df.prompt_text.to_numpy()  # caused mis-matching distribution of Validation & Test
         self.p_questions = p_df.prompt_question.to_numpy()
         self.s_ids = s_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
-        self.s_texts = s_df.text.to_numpy()
+        self.s_texts = s_df.fixed_text.to_numpy()
 
     def __len__(self) -> int:
         return len(self.s_ids)
@@ -42,7 +42,7 @@ class OneToOneDataset(Dataset):
     def __getitem__(self, item: int) -> tuple[dict, Tensor]:
         # 1) load special token for making prompt sentence
         cls, sep = self.cfg.tokenizer.cls_token, self.cfg.tokenizer.sep_token
-        anc, tar = self.cfg.tokenizer.anc_token, self.cfg.tokenizer.tar_token
+        anc, tar = self.cfg.tokenizer.anchor_token, self.cfg.tokenizer.tar_token
         # 2) load feature for making prompt sentence & LLM's inputs
         key = find_index(self.p_ids, self.s_ids[item])
         """
@@ -50,7 +50,7 @@ class OneToOneDataset(Dataset):
         are affected to model's NLU performance
             - prompt_question + prompt_title + summaries_text
         """
-        prompt = cls + self.p_questions[key] + anc + self.p_titles[key] + anc + sep
+        prompt = cls + cleaning_words(self.p_questions[key]) + anc + cleaning_words(self.p_titles[key]) + anc + sep
         prompt += cleaning_words(self.s_texts[item]) + tar + sep
 
         inputs = self.tokenizing(self.cfg, prompt)

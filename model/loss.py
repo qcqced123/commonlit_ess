@@ -53,6 +53,7 @@ class WeightMCRMSELoss(nn.Module):
     """
     Apply loss rate per target classes for using Meta Pseudo Labeling
     Weighted Loss can transfer original label data's distribution to pseudo label data
+    0.36 vs 0.64
     [Reference]
     https://www.kaggle.com/competitions/feedback-prize-english-language-learning/discussion/369609
     """

@@ -30,8 +30,8 @@ class OneToOneTrainer:
         self.cfg = cfg
         self.model_name = self.cfg.model.split('/')[1]
         self.generator = generator
-        self.p_df = load_data('./dataset_class/data_folder/prompts_train.csv')
-        self.s_df = load_data('./dataset_class/data_folder/summaries_train.csv')
+        self.p_df = load_data('./dataset_class/data_folder/one2one_prompt_df.csv')
+        self.s_df = load_data('./dataset_class/data_folder/fold4_one2one_summaries_df.csv')
         self.tokenizer = self.cfg.tokenizer
 
     def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:
@@ -87,11 +87,11 @@ class OneToOneTrainer:
             )
         return model, criterion, val_criterion, optimizer, lr_scheduler, awp
 
-    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp: None) -> tuple[Tensor, Tensor, Tensor]:
+    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp: None) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """ function for train loop """
         # torch.autograd.set_detect_anomaly(True)
         scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.amp_scaler)
-        losses = AverageMeter()
+        losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
         model.train()
         for step, (inputs, labels) in enumerate(tqdm(loader_train)):
             optimizer.zero_grad()
@@ -100,17 +100,22 @@ class OneToOneTrainer:
             for k, v in inputs.items():
                 inputs[k] = v.to(self.cfg.device)  # train to gpu
             labels = labels.to(self.cfg.device)  # Two target values to GPU
+            label_content, label_wording = labels[:, 0], labels[:, 1]
             batch_size = labels.size(0)
 
             with torch.cuda.amp.autocast(enabled=self.cfg.amp_scaler):
-                preds = model(inputs)
-                loss = criterion(preds, labels)
+                pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
+                c_loss, w_loss = criterion(c_pred, label_content), criterion(w_pred, label_wording)
+                loss = c_loss + w_loss
 
             if self.cfg.n_gradient_accumulation_steps > 1:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
 
             scaler.scale(loss).backward()
             losses.update(loss.detach().cpu().numpy(), batch_size)  # Must do detach() for avoid memory leak
+            c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+            w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
             if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
                 loss = awp.attack_backward(inputs, labels)
@@ -127,17 +132,16 @@ class OneToOneTrainer:
                 scaler.update()
                 scheduler.step()
 
-            del inputs, labels, preds, loss
+            del inputs, labels, label_content, label_wording, pred_list, c_loss, w_loss, loss
             torch.cuda.empty_cache()
             gc.collect()
 
-        train_loss = losses.avg
         grad_norm = grad_norm.detach().cpu().numpy()
-        return train_loss, grad_norm, scheduler.get_lr()[0]
+        return losses.avg, c_losses.avg, w_losses.avg, grad_norm, scheduler.get_lr()[0]
 
-    def valid_fn(self, loader_valid, model, val_criterion) -> Tensor:
+    def valid_fn(self, loader_valid, model, val_criterion) -> Tuple[Tensor, Tensor, Tensor]:
         """ function for validation loop """
-        valid_losses = AverageMeter()
+        valid_losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
         model.eval()
         with torch.no_grad():
             for step, (inputs, labels) in enumerate(tqdm(loader_valid)):
@@ -145,17 +149,21 @@ class OneToOneTrainer:
                 for k, v in inputs.items():
                     inputs[k] = v.to(self.cfg.device)
                 labels = labels.to(self.cfg.device)
+                label_content, label_wording = labels[:, 0], labels[:, 1]
                 batch_size = labels.size(0)
-                preds = model(inputs)
-                valid_loss = val_criterion(preds, labels)
-                valid_losses.update(valid_loss.detach().cpu().numpy(), batch_size)
 
-            del inputs, labels, preds, valid_loss
+                pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
+                c_loss, w_loss = val_criterion(c_pred, label_content), val_criterion(w_pred, label_wording)
+                loss = (c_loss + w_loss) / 2  # compute mc rmse
+                valid_losses.update(loss.detach().cpu().numpy(), batch_size)
+                c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+                w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
+
+            del inputs, labels, label_content, label_wording, pred_list, c_loss, w_loss, loss
             torch.cuda.empty_cache()
             gc.collect()
-
-        valid_loss = valid_losses.avg
-        return valid_loss
+        return valid_losses.avg, c_losses.avg, w_losses.avg
 
 
 class OneToOneSmartBatchTrainer:

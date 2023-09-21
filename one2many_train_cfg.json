@@ -34,12 +34,12 @@
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 2000
+        "max_grad_norm": 10
     },
     "loss_options": {
-        "loss_fn": "SmoothL1Loss",
-        "val_loss_fn": "MCRMSELoss",
-        "reduction": "mean"
+        "loss_fn": "RMSELoss",
+        "val_loss_fn": "RMSELoss",
+        "reduction": "none"
     },
     "metrics_options": {
         "metrics": "MCRMSELoss"
@@ -69,10 +69,10 @@
     "model_utils": {
         "init_weight": "xavier_uniform",
         "stop_mode": "min",
-        "freeze": true,
+        "freeze": false,
         "num_freeze": 4,
         "reinit": true,
-        "num_reinit": 5,
+        "num_reinit": 1,
         "awp": false,
         "nth_awp_start_epoch": 2,
         "awp_eps": 1e-2,
