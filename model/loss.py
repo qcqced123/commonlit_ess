@@ -8,7 +8,7 @@ from torch import Tensor
 
 class SmoothL1Loss(nn.Module):
     """ Smooth L1 Loss in Pytorch """
-    def __init__(self, reduction):
+    def __init__(self, reduction: str = 'mean') -> Tensor:
         super().__init__()
         self.reduction = reduction
 
@@ -18,7 +18,7 @@ class SmoothL1Loss(nn.Module):
 
 
 class RMSELoss(nn.Module):
-    def __init__(self, reduction, eps=1e-6):
+    def __init__(self, reduction: str = 'mean', eps=1e-6) -> Tensor:
         super().__init__()
         self.mse = nn.MSELoss(reduction=reduction)
         self.eps = eps # If MSE == 0, We need eps

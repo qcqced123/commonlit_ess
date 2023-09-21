@@ -38,9 +38,9 @@
         "max_grad_norm": 100
     },
    "loss_options": {
-        "loss_fn": "RMSELoss",
+        "loss_fn": "SmoothL1Loss",
         "val_loss_fn": "RMSELoss",
-        "reduction": "sum"
+        "reduction": "mean"
     },
     "metrics_options": {
         "metrics": "MCRMSELoss"
@@ -48,7 +48,7 @@
     "optimizer_options": {
         "optimizer": "AdamW",
         "llrd": true,
-        "layerwise_lr": 3e-5,
+        "layerwise_lr": 5e-5,
         "layerwise_lr_decay": 0.9,
         "layerwise_weight_decay": 1e-2,
         "layerwise_adam_epsilon": 1e-8,

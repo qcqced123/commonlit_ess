@@ -114,6 +114,7 @@ class OneToOneTrainer:
 
             scaler.scale(loss).backward()
             losses.update(loss.detach().cpu().numpy(), batch_size)  # Must do detach() for avoid memory leak
+
             c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
             w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
@@ -156,6 +157,7 @@ class OneToOneTrainer:
                 c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
                 c_loss, w_loss = val_criterion(c_pred, label_content), val_criterion(w_pred, label_wording)
                 loss = (c_loss + w_loss) / 2  # compute mc rmse
+
                 valid_losses.update(loss.detach().cpu().numpy(), batch_size)
                 c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
                 w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
