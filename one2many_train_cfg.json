@@ -23,7 +23,7 @@
         "num_workers": 4
     },
     "data_settings": {
-        "n_folds": 4,
+        "n_folds": 7,
         "max_len": 2048,
         "epochs": 30,
         "batch_size": 8,
@@ -57,7 +57,7 @@
     "scheduler_options": {
         "scheduler": "cosine_annealing",
         "batch_scheduler": true,
-        "num_cycles": 6,
+        "num_cycles": 3,
         "warmup_ratio": 0.1
     },
     "swa_options": {
@@ -67,7 +67,7 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "init_weight": "xavier_uniform",
+        "init_weight": "kaiming_uniform",
         "stop_mode": "min",
         "freeze": false,
         "num_freeze": 4,

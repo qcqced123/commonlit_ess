@@ -20,7 +20,7 @@ def train_loop(cfg: CFG) -> None:
             project=cfg.name,
             name=f'[{cfg.model_arch}]' + cfg.model + f'/fold{fold}',
             config=class2dict(cfg),
-            group=f'fold4/prompt1/{cfg.loss_fn}/{cfg.model}/max_length_{cfg.max_len}/',
+            group=f'{cfg.n_folds}/prompt2/{cfg.loss_fn}/{cfg.model}/max_length_{cfg.max_len}/',
             job_type='train',
             entity="qcqced"
         )
