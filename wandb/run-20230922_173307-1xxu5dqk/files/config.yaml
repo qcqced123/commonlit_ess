@@ -61,7 +61,7 @@ gradient_checkpoint:
   value: true
 init_weight:
   desc: null
-  value: xavier_uniform
+  value: kaiming_uniform
 layerwise_adam_epsilon:
   desc: null
   value: 1.0e-08
@@ -91,7 +91,7 @@ loss_fn:
   value: RMSELoss
 max_grad_norm:
   desc: null
-  value: 10
+  value: 100
 max_len:
   desc: null
   value: 2048
@@ -208,7 +208,7 @@ _wandb:
     huggingface_version: 4.31.0
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1695351999.454996
+    start_time: 1695371587.486985
     t:
       1:
       - 1
@@ -227,7 +227,6 @@ _wandb:
       - 53
       - 55
       3:
-      - 2
       - 13
       - 16
       - 23

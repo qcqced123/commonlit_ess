@@ -34,7 +34,7 @@
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 10
+        "max_grad_norm": 100
     },
     "loss_options": {
         "loss_fn": "RMSELoss",
