@@ -142,6 +142,8 @@ def sync_config(json_config: json) -> None:
     CFG.anneal_strategy = json_config.swa_options.anneal_strategy
 
     """ model_utils """
+    CFG.attention_probs_dropout_prob = json_config.model_utils.attention_probs_dropout_prob
+    CFG.hidden_dropout_prob = json_config.model_utils.hidden_dropout_prob
     CFG.init_weight = json_config.model_utils.init_weight
     CFG.stop_mode = json_config.model_utils.stop_mode
     CFG.reinit = json_config.model_utils.reinit

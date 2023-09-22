@@ -67,6 +67,8 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
+        "attention_probs_dropout_prob": 0.007,
+        "hidden_dropout_prob": 0.007,
         "init_weight": "kaiming_uniform",
         "stop_mode": "min",
         "freeze": false,

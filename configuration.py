@@ -71,6 +71,8 @@ class CFG:
     anneal_strategy = 'cos'  # default = cos, available option: linear
 
     """ Model_Utils Options """
+    attention_probs_dropout_prob = 0.007
+    hidden_dropout_prob = 0.007
     init_weight = 'normal'
     stop_mode = 'min'
     freeze = False

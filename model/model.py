@@ -22,6 +22,9 @@ class OneToOneModel(nn.Module):
             cfg.model,
             output_hidden_states=True
         )
+        self.auto_cfg.attention_probs_dropout_prob = 0.007
+        self.auto_cfg.hidden_dropout_prob = 0.007
+
         self.model = AutoModel.from_pretrained(
             cfg.model,
             config=self.auto_cfg
@@ -102,6 +105,9 @@ class OneToManyModel(nn.Module):
             cfg.model,
             output_hidden_states=True
         )
+        self.auto_cfg.attention_probs_dropout_prob = 0.007
+        self.auto_cfg.hidden_dropout_prob = 0.007
+
         self.model = AutoModel.from_pretrained(
             cfg.model,
             config=self.auto_cfg
