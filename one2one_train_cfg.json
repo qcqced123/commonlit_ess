@@ -11,7 +11,7 @@
         "dataset": "OneToOneDataset",
         "model_arch": "OneToOneModel",
         "model": "microsoft/deberta-v3-large",
-        "pooling": "MeanPooling"
+        "pooling": "GEMPooling"
     },
     "common_settings": {
         "wandb": true,
@@ -35,7 +35,7 @@
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
-        "max_grad_norm": 10
+        "max_grad_norm": 100
     },
    "loss_options": {
         "loss_fn": "RMSELoss",
