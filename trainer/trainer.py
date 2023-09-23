@@ -196,7 +196,7 @@ class OneToOneSmartBatchTrainer:
             self.cfg, train
         )
         valid_dataset = getattr(dataset_class, self.cfg.dataset)(
-            self.cfg, valid
+            self.cfg, valid, True
         )
         # 2) Initializing torch.utils.data.DataLoader Module
         loader_train = train_dataset.get_smart_dataloader()
