@@ -168,6 +168,163 @@ class OneToOneTrainer:
         return valid_losses.avg, c_losses.avg, w_losses.avg
 
 
+class MaskedOneToOneTrainer:
+    """
+    Trainer class for OneToOne DataSchema Pipeline, having many optimization options
+    So, if you want set options, go to cfg.json file or configuration.py
+    And then, apply masking for extract embedding only target text
+    Args:
+        cfg: configuration module, configuration.py
+        generator: torch.Generator, for init pytorch random seed
+    """
+    def __init__(self, cfg: CFG, generator: torch.Generator) -> None:
+        self.cfg = cfg
+        self.model_name = self.cfg.model.split('/')[1]
+        self.generator = generator
+        self.p_df = load_data('./dataset_class/data_folder/one2one_prompt_df.csv')
+        self.s_df = load_data('./dataset_class/data_folder/7folds_one2one_df.csv')
+        self.tokenizer = self.cfg.tokenizer
+
+    def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:
+        """ function for making batch instance for random sampler, smart-batch sampler """
+        train = self.s_df[self.s_df['fold'] != fold].reset_index(drop=True)
+        valid = self.s_df[self.s_df['fold'] == fold].reset_index(drop=True)
+
+        # 1) Custom Datasets
+        train_dataset = getattr(dataset_class, self.cfg.dataset)(
+            self.cfg, self.p_df, train
+        )
+        valid_dataset = getattr(dataset_class, self.cfg.dataset)(
+            self.cfg, self.p_df, valid
+        )
+        # 2) Initializing torch.utils.data.DataLoader Module
+        loader_train = get_dataloader(self.cfg, train_dataset, self.generator)
+        loader_valid = get_dataloader(self.cfg, valid_dataset, self.generator, shuffle=False, drop_last=False)
+        return loader_train, loader_valid, train
+
+    def model_setting(self, len_train: int):
+        """ function for init backbone's configuration & train utils setting """
+        model = getattr(model_arch, self.cfg.model_arch)(self.cfg)
+        # load checkpoint when you set 'resume' to True
+        if self.cfg.resume:
+            model.load_state_dict(torch.load(self.cfg.checkpoint_dir + self.cfg.state_dict))
+        model.to(self.cfg.device)
+
+        criterion = getattr(model_loss, self.cfg.loss_fn)(self.cfg.reduction)
+        val_criterion = getattr(model_loss, self.cfg.val_loss_fn)(self.cfg.reduction)
+        grouped_optimizer_params = get_optimizer_grouped_parameters(
+            model,
+            self.cfg.layerwise_lr,
+            self.cfg.layerwise_weight_decay,
+            self.cfg.layerwise_lr_decay
+        )
+        optimizer = getattr(transformers, self.cfg.optimizer)(
+            params=grouped_optimizer_params,
+            lr=self.cfg.layerwise_lr,
+            eps=self.cfg.layerwise_adam_epsilon,
+            correct_bias=not self.cfg.layerwise_use_bertadam
+        )
+        lr_scheduler = get_scheduler(self.cfg, optimizer, len_train)
+
+        awp = None
+        if self.cfg.awp:
+            awp = AWP(
+                model,
+                criterion,
+                optimizer,
+                self.cfg.awp,
+                adv_lr=self.cfg.awp_lr,
+                adv_eps=self.cfg.awp_eps
+            )
+        return model, criterion, val_criterion, optimizer, lr_scheduler, awp
+
+    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp: None) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        """ function for train loop """
+        # torch.autograd.set_detect_anomaly(True)
+        scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.amp_scaler)
+        losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
+        model.train()
+        for step, (inputs, label_content, label_wording) in enumerate(tqdm(loader_train)):
+            optimizer.zero_grad()
+            inputs, label_content, label_wording = one2many_collate(inputs, label_content, label_wording)
+
+            for k, v in inputs.items():
+                inputs[k] = v.to(self.cfg.device)  # train to gpu
+            label_content = label_content.to(self.cfg.device)  # Two target values to GPU
+            label_wording = label_wording.to(self.cfg.device)  # Two target values to GPU
+
+            batch_size = label_content.size(0)
+
+            with torch.cuda.amp.autocast(enabled=self.cfg.amp_scaler):
+                pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, :, 0], pred_list[:, :, 1]
+
+                c_loss, w_loss = criterion(c_pred.view(-1, 1), label_content.view(-1, 1)), criterion(w_pred.view(-1, 1), label_wording.view(-1, 1))
+                c_mask, w_mask = (label_content.view(-1, 1) != -1), (label_wording.view(-1, 1) != -1)
+                c_loss, w_loss = torch.masked_select(c_loss, c_mask).mean(), torch.masked_select(w_loss, w_mask).mean()  # reduction = mean
+                loss = c_loss + w_loss
+
+            if self.cfg.n_gradient_accumulation_steps > 1:
+                loss = loss / self.cfg.n_gradient_accumulation_steps
+
+            scaler.scale(loss).backward()
+            losses.update(loss.detach().cpu().numpy(), batch_size)  # Must do detach() for avoid memory leak
+            c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+            w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
+
+            # if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
+            #     loss = awp.attack_backward(inputs, labels)
+            #     scaler.scale(loss).backward()
+            #     awp._restore()
+
+            if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
+                scaler.unscale_(optimizer)
+                grad_norm = torch.nn.utils.clip_grad_norm(
+                    model.parameters(),
+                    self.cfg.max_grad_norm * self.cfg.n_gradient_accumulation_steps
+                )
+                scaler.step(optimizer)
+                scaler.update()
+                scheduler.step()
+
+            del inputs, label_content, label_wording, pred_list, c_loss, w_loss, loss
+            torch.cuda.empty_cache()
+            gc.collect()
+
+        grad_norm = grad_norm.detach().cpu().numpy()
+        return losses.avg, c_losses.avg, w_losses.avg, grad_norm, scheduler.get_lr()[0]
+
+    def valid_fn(self, loader_valid, model, val_criterion) -> Tuple[Tensor, Tensor, Tensor]:
+        """ function for validation loop """
+        valid_losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
+        model.eval()
+        with torch.no_grad():
+            for step, (inputs, label_content, label_wording) in enumerate(tqdm(loader_valid)):
+                inputs, label_content, label_wording = one2many_collate(inputs, label_content, label_wording)
+                for k, v in inputs.items():
+                    inputs[k] = v.to(self.cfg.device)
+                label_content = label_content.to(self.cfg.device)  # Two target values to GPU
+                label_wording = label_wording.to(self.cfg.device)  # Two target values to GPU
+                batch_size = label_content.size(0)
+
+                pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, :, 0], pred_list[:, :, 1]
+
+                c_loss, w_loss = val_criterion(c_pred.view(-1, 1), label_content.view(-1, 1)), val_criterion(w_pred.view(-1, 1), label_wording.view(-1, 1))
+                c_mask, w_mask = (label_content.view(-1, 1) != -1), (label_wording.view(-1, 1) != -1)
+                c_loss, w_loss = torch.masked_select(c_loss, c_mask).mean(), torch.masked_select(w_loss, w_mask).mean()
+                loss = (c_loss + w_loss) / 2
+
+                valid_losses.update(loss.detach().cpu().numpy(), batch_size)
+                c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+                w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
+
+            del inputs, label_content, label_wording, pred_list, c_loss, w_loss, loss
+            torch.cuda.empty_cache()
+            gc.collect()
+        return valid_losses.avg, c_losses.avg, w_losses.avg
+
+
 class OneToOneSmartBatchTrainer:
     """
     Trainer class for OneToOne DataSchema Pipeline, applied with Smart Batch Collate, Sampler (iterable-style)

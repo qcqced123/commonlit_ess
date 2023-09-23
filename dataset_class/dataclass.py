@@ -19,7 +19,6 @@ class OneToOneDataset(Dataset):
         1) apply preprocessing for mis-spelling words in prompt texts & summaries texts (applied)
         2) make prompt sentence with no padding (x)
         => this pipeline will be set hyper-params 'max_len' as at least, which is maximum value of all instance's prompt sentence length
-        3) (+add) make masking tensor for p-tuning
     Args:
         cfg: config module from configuration.py
         p_df: prompt train dataset, prompts_train.csv
@@ -56,6 +55,73 @@ class OneToOneDataset(Dataset):
         inputs = self.tokenizing(self.cfg, prompt)
         labels = torch.tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
         return inputs, labels
+
+
+class MaskedOneToOneDataset(Dataset):
+    """
+    For Supervised Learning Pipeline, making "type 1" prompt sentence for LLMs Inputs
+    This class have 2 functions
+        1) apply preprocessing for mis-spelling words in prompt texts & summaries texts (applied)
+        2) make prompt sentence with no padding (x)
+        3) make masking tensor for p-tuning
+    Args:
+        cfg: config module from configuration.py
+        p_df: prompt train dataset, prompts_train.csv
+        s_df: prompt train dataset, summaries_train.csv
+    """
+    def __init__(self, cfg: configuration.CFG, p_df: pd.DataFrame, s_df: pd.DataFrame) -> None:
+        self.cfg = cfg
+        self.tokenizing = tokenizing
+        self.s_df = s_df
+        self.p_ids = p_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
+        self.p_titles = p_df.prompt_title.to_numpy()
+        self.p_texts = p_df.prompt_text.to_numpy()  # caused mis-matching distribution of Validation & Test
+        self.p_questions = p_df.prompt_question.to_numpy()
+        self.s_ids = s_df.prompt_id.to_numpy()  # which is connection key of prompt & summaries
+        self.s_texts = s_df.fixed_text.to_numpy()
+
+    def __len__(self) -> int:
+        return len(self.s_ids)
+
+    def __getitem__(self, item: int) -> Tuple[dict, Tensor, Tensor]:
+        # 1) load special token for making prompt sentence
+        cls, sep = self.cfg.tokenizer.cls_token, self.cfg.tokenizer.sep_token
+        anc, tar = self.cfg.tokenizer.anchor_token, self.cfg.tokenizer.tar_token
+        # 2) load feature for making prompt sentence & LLM's inputs
+        key = find_index(self.p_ids, self.s_ids[item])
+        """
+        3) make prompt sentence for LLM's inputs laterly, check special token's position & numbers
+        are affected to model's NLU performance
+            - prompt_question + prompt_title + summaries_text
+        """
+        prompt = cls + cleaning_words(self.p_questions[key]) + anc + cleaning_words(self.p_titles[key]) + anc + sep
+        prompt += cleaning_words(self.s_texts[item]) + tar + sep
+
+        inputs = self.tokenizing(self.cfg, prompt)
+        c_label, w_label = torch.tensor(self.s_df.iloc[item, 3], dtype=torch.float), torch.tensor(self.s_df.iloc[item, 4], dtype=torch.float)
+
+        label_content = torch.full(
+            [len([token for token in inputs['input_ids']])], -1, dtype=torch.float
+        )
+        label_wording = torch.full(
+            [len([token for token in inputs['input_ids']])], -1, dtype=torch.float
+        )
+        cnt_anc, cnt_tar, cnt_sep, nth_target, prev_i = 0, 0, 0, -1, -1
+        for i, input_id in enumerate(inputs['input_ids']):
+            if input_id == self.cfg.tokenizer.tar_token_id:
+                cnt_tar += 1
+                if cnt_tar == 1:
+                    break
+            if input_id == self.cfg.tokenizer.sep_token_id:
+                cnt_sep += 1
+            # count number of target tokens
+            if cnt_sep == 1 and input_id not in [self.cfg.tokenizer.pad_token_id, self.cfg.tokenizer.sep_token_id,
+                                                 self.cfg.tokenizer.tar_token_id, self.cfg.tokenizer.anchor_token_id]:
+                if (i - prev_i) > 1:
+                    nth_target += 1
+                label_content[i], label_wording[i] = c_label, w_label
+                prev_i = i
+        return inputs, label_content, label_wording
 
 
 class OneToOneSmartBatchDataset(Dataset):
