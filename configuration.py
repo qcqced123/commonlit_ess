@@ -45,6 +45,8 @@ class CFG:
     loss_fn = 'SmoothL1Loss'
     val_loss_fn = 'WeightedMSELoss'
     reduction = 'mean'
+    content_weight = 0.45
+    wording_weight = 0.55
     metrics = ['MCRMSE', 'f_beta', 'recall']
 
     """ Optimizer with LLRD Options """

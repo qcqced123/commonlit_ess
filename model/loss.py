@@ -57,7 +57,7 @@ class WeightMCRMSELoss(nn.Module):
     [Reference]
     https://www.kaggle.com/competitions/feedback-prize-english-language-learning/discussion/369609
     """
-    def __init__(self, reduction, num_scored=6):
+    def __init__(self, reduction, num_scored=2):
         super().__init__()
         self.RMSE = RMSELoss(reduction=reduction)
         self.num_scored = num_scored

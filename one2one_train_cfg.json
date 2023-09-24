@@ -38,10 +38,12 @@
         "max_grad_norm": 100
     },
    "loss_options": {
-        "loss_fn": "SmoothL1Loss",
+        "loss_fn": "RMSELoss",
         "val_loss_fn": "RMSELoss",
-        "reduction": "none"
-    },
+        "reduction": "none",
+        "content_weight": 0.45,
+        "wording_weight": 0.55
+   },
     "metrics_options": {
         "metrics": "MCRMSELoss"
     },
