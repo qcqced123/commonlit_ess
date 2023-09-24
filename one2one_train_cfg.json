@@ -26,19 +26,19 @@
         "n_folds": 4,
         "max_len": 1024,
         "epochs": 30,
-        "batch_size": 64,
-        "val_batch_size": 64,
+        "batch_size": 32,
+        "val_batch_size": 32,
         "smart_batch": false
     },
     "gradient_settings": {
-        "amp_scaler": true,
+        "amp_scaler": false,
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
         "max_grad_norm": 100
     },
    "loss_options": {
-        "loss_fn": "RMSELoss",
+        "loss_fn": "SmoothL1Loss",
         "val_loss_fn": "RMSELoss",
         "reduction": "none"
     },
@@ -72,7 +72,7 @@
         "hidden_dropout_prob": 0.007,
         "init_weight": "kaiming_uniform",
         "stop_mode": "min",
-        "freeze": false,
+        "freeze": true,
         "num_freeze": 1,
         "reinit": true,
         "num_reinit": 1,
