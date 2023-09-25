@@ -30,7 +30,7 @@ class OneToOneModel(nn.Module):
             config=self.auto_cfg
         )
         self.model.resize_token_embeddings(len(self.cfg.tokenizer))
-        # self.pooling = getattr(pooling, cfg.pooling)(self.auto_cfg)
+        self.pooling = getattr(pooling, cfg.pooling)(self.auto_cfg)
         self.fc = nn.Linear(self.auto_cfg.hidden_size, 2)  # Target Class: content, wording
         if self.cfg.load_pretrained:
             self.model.load_state_dict(

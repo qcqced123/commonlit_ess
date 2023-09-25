@@ -85,7 +85,7 @@ class GEMPooling(nn.Module):
         super(GEMPooling, self).__init__()
 
     @staticmethod
-    def forward(last_hidden_state, attention_mask, p: int = 3) -> Tensor:
+    def forward(last_hidden_state, attention_mask, p: int = 2) -> Tensor:
         """
         1) Expand Attention Mask from [batch_size, max_len] to [batch_size, max_len, hidden_size]
         2) Sum Embeddings along max_len axis so now we have [batch_size, hidden_size]

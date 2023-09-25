@@ -2,16 +2,16 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/fold7_masked_one2one/",
+        "checkpoint_dir": "./checkpoint/model/fold4_one2one/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
-        "name": "MaskedOneToOneTrainer",
+        "name": "OneToOneTrainer",
         "loop": "train_loop",
-        "dataset": "MaskedOneToOneDataset",
-        "model_arch": "MaskedOneToOneModel",
+        "dataset": "OneToOneDataset",
+        "model_arch": "OneToOneModel",
         "model": "microsoft/deberta-v3-large",
-        "pooling": "MeanPooling"
+        "pooling": "AttentionPooling"
     },
     "common_settings": {
         "wandb": true,
@@ -26,12 +26,12 @@
         "n_folds": 4,
         "max_len": 1024,
         "epochs": 30,
-        "batch_size": 32,
+        "batch_size": 64,
         "val_batch_size": 32,
         "smart_batch": false
     },
     "gradient_settings": {
-        "amp_scaler": false,
+        "amp_scaler": true,
         "gradient_checkpoint": true,
         "clipping_grad": true,
         "n_gradient_accumulation_steps": 1,
@@ -40,9 +40,9 @@
    "loss_options": {
         "loss_fn": "RMSELoss",
         "val_loss_fn": "RMSELoss",
-        "reduction": "none",
-        "content_weight": 0.45,
-        "wording_weight": 0.55
+        "reduction": "mean",
+        "content_weight": 1,
+        "wording_weight": 1
    },
     "metrics_options": {
         "metrics": "MCRMSELoss"
@@ -74,8 +74,8 @@
         "hidden_dropout_prob": 0.007,
         "init_weight": "kaiming_uniform",
         "stop_mode": "min",
-        "freeze": true,
-        "num_freeze": 1,
+        "freeze": false,
+        "num_freeze": 2,
         "reinit": true,
         "num_reinit": 1,
         "awp": false,

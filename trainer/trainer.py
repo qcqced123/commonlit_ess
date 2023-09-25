@@ -31,7 +31,7 @@ class OneToOneTrainer:
         self.model_name = self.cfg.model.split('/')[1]
         self.generator = generator
         self.p_df = load_data('./dataset_class/data_folder/one2one_prompt_df.csv')
-        self.s_df = load_data('./dataset_class/data_folder/7folds_one2one_df.csv')
+        self.s_df = load_data('./dataset_class/data_folder/fold4_one2one_summaries_df.csv')
         self.tokenizer = self.cfg.tokenizer
 
     def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:
@@ -87,7 +87,7 @@ class OneToOneTrainer:
             )
         return model, criterion, val_criterion, optimizer, lr_scheduler, awp
 
-    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp: None) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp = None) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """ function for train loop """
         # torch.autograd.set_detect_anomaly(True)
         scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.amp_scaler)
@@ -107,7 +107,7 @@ class OneToOneTrainer:
                 pred_list = model(inputs)
                 c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
                 c_loss, w_loss = criterion(c_pred, label_content), criterion(w_pred, label_wording)
-                loss = c_loss + w_loss
+                loss = (self.cfg.content_weight * c_loss) + (self.cfg.wording_weight * w_loss)  # Weighted MCRMSE Loss
 
             if self.cfg.n_gradient_accumulation_steps > 1:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
@@ -119,8 +119,8 @@ class OneToOneTrainer:
             w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
             if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
-                loss = awp.attack_backward(inputs, labels)
-                scaler.scale(loss).backward()
+                awp_c_loss, awp_w_loss = awp.attack_backward(c_pred, label_content), awp.attack_backward(w_pred, label_wording)
+                scaler.scale(awp_c_loss + awp_w_loss).backward()
                 awp._restore()
 
             if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:
