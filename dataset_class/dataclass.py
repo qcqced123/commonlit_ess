@@ -49,8 +49,8 @@ class OneToOneDataset(Dataset):
         are affected to model's NLU performance
             - prompt_question + prompt_title + summaries_text
         """
-        prompt = cls + cleaning_words(self.p_questions[key]) + anc + cleaning_words(self.p_titles[key]) + anc + sep
-        prompt += cleaning_words(self.s_texts[item]) + tar + sep
+        prompt = cls + cleaning_words(self.s_texts[item]) + tar + sep
+        prompt += cleaning_words(self.p_questions[key]) + anc + cleaning_words(self.p_titles[key]) + anc + sep
 
         inputs = self.tokenizing(self.cfg, prompt)
         labels = torch.tensor(self.s_df.iloc[item, 3:5], dtype=torch.float)
