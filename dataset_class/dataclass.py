@@ -238,7 +238,7 @@ class OneToManyDataset(Dataset):
         # Make prompt sequence
         cls, sep = self.cfg.tokenizer.cls_token, self.cfg.tokenizer.sep_token
         anc, tar = self.cfg.tokenizer.anchor_token, self.cfg.tokenizer.tar_token
-        prompts = cls + p_title + anc + p_question + anc + sep
+        prompts = cls + cleaning_words(p_title) + anc + cleaning_words(p_question) + anc + sep
         for targets in text:
             prompts += targets + tar
         prompts += sep

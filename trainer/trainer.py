@@ -479,7 +479,7 @@ class OneToManyTrainer:
         self.cfg = cfg
         self.model_name = self.cfg.model.split('/')[1]
         self.generator = generator
-        self.s_df = load_data('./dataset_class/data_folder/7folds_k15_one2many_train.csv')
+        self.s_df = load_data('./dataset_class/data_folder/k15_fold4_one2many_train.csv')
         self.tokenizer = self.cfg.tokenizer
 
     def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:
@@ -557,6 +557,7 @@ class OneToManyTrainer:
                 c_mask, w_mask = (label_content.view(-1, 1) != -1), (label_wording.view(-1, 1) != -1)
                 c_loss, w_loss = torch.masked_select(c_loss, c_mask).mean(), torch.masked_select(w_loss, w_mask).mean()  # reduction = mean
                 loss = c_loss + w_loss
+                loss = (self.cfg.content_weight * c_loss) + (self.cfg.wording_weight * w_loss)  # Weighted MCRMSE Loss
 
             if self.cfg.n_gradient_accumulation_steps > 1:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
