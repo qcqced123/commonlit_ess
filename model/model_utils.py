@@ -18,12 +18,12 @@ def zero_filtering(x: torch.Tensor) -> torch.Tensor:
     Add eps value for zero embedding, because competition metric is cosine similarity
     Cosine Similarity will be returned NaN, when input value has zero, like as torch.clamp()
     """
-    eps = 1e-4
+    eps = 1e-9
     x[x <= eps] = eps
     return x
 
 
-def nan_filtering(x: torch.Tensor, eps: float = 1e-2) -> torch.Tensor:
+def nan_filtering(x: torch.Tensor, eps: float = 1e-9) -> torch.Tensor:
     """
     init unique eps value for each operations in torch.amp.auto_cast
     Change eps value for NaN Embedding from torch.pow, division, angular loss ...etc

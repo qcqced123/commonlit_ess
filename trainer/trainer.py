@@ -556,7 +556,6 @@ class OneToManyTrainer:
                 c_loss, w_loss = criterion(c_pred.view(-1, 1), label_content.view(-1, 1)), criterion(w_pred.view(-1, 1), label_wording.view(-1, 1))
                 c_mask, w_mask = (label_content.view(-1, 1) != -1), (label_wording.view(-1, 1) != -1)
                 c_loss, w_loss = torch.masked_select(c_loss, c_mask).mean(), torch.masked_select(w_loss, w_mask).mean()  # reduction = mean
-                loss = c_loss + w_loss
                 loss = (self.cfg.content_weight * c_loss) + (self.cfg.wording_weight * w_loss)  # Weighted MCRMSE Loss
 
             if self.cfg.n_gradient_accumulation_steps > 1:

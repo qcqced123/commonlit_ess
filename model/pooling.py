@@ -18,7 +18,7 @@ class WeightedLayerPooling(nn.Module):
         layer_start: how many layers do you want to use, default 21 (last 4 layers)
         layer_weights: layer weights for pooling, default None
     """
-    def __init__(self, auto_cfg, layer_start: int = 12, layer_weights=None) -> None:
+    def __init__(self, auto_cfg, layer_start: int = 20, layer_weights=None) -> None:
         super(WeightedLayerPooling, self).__init__()
         self.layer_start = layer_start
         self.num_hidden_layers = auto_cfg.num_hidden_layers
@@ -85,7 +85,7 @@ class GEMPooling(nn.Module):
         super(GEMPooling, self).__init__()
 
     @staticmethod
-    def forward(last_hidden_state, attention_mask, p: int = 2) -> Tensor:
+    def forward(last_hidden_state, attention_mask, p: int = 4) -> Tensor:
         """
         1) Expand Attention Mask from [batch_size, max_len] to [batch_size, max_len, hidden_size]
         2) Sum Embeddings along max_len axis so now we have [batch_size, hidden_size]

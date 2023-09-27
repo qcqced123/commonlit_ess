@@ -20,7 +20,7 @@ def train_loop(cfg: CFG) -> None:
             project=cfg.name,
             name=f'[{cfg.model_arch}]' + cfg.model + f'/fold{fold}',
             config=class2dict(cfg),
-            group=f'{cfg.n_folds}/prompt2/{cfg.loss_fn}/{cfg.model}/max_length_{cfg.max_len}/',
+            group=f'{cfg.n_folds}/prompt1/{cfg.loss_fn}/{cfg.model}/max_length_{cfg.max_len}/',
             job_type='train',
             entity="qcqced"
         )
@@ -64,7 +64,7 @@ def train_loop(cfg: CFG) -> None:
                 print(f'Best Score: {valid_loss}')
                 torch.save(
                     model.state_dict(),
-                    f'{cfg.checkpoint_dir}fold{fold}_{cfg.pooling}_{cfg.max_len}_{get_name(cfg)}_state_dict.pth'
+                    f'{cfg.checkpoint_dir}fold{fold}_CV_{valid_loss}_{cfg.pooling}_{cfg.max_len}_{get_name(cfg)}_state_dict.pth'
                 )
                 val_score_max = valid_loss
 
