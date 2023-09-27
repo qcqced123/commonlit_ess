@@ -479,7 +479,7 @@ class OneToManyTrainer:
         self.cfg = cfg
         self.model_name = self.cfg.model.split('/')[1]
         self.generator = generator
-        self.s_df = load_data('./dataset_class/data_folder/k15_fold4_one2many_train.csv')
+        self.s_df = load_data('./dataset_class/data_folder/k25_one2many_train.csv')
         self.tokenizer = self.cfg.tokenizer
 
     def make_batch(self, fold: int) -> tuple[DataLoader, DataLoader, pd.DataFrame]:

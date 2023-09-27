@@ -2,7 +2,7 @@
     "pipeline_setting": {
         "train": true,
         "test": false,
-        "checkpoint_dir": "./checkpoint/model/k15_type2_fold4/",
+        "checkpoint_dir": "./checkpoint/model/k25_type2_fold4/",
         "load_pretrained": false,
         "resume": false,
         "state_dict": "",
@@ -24,7 +24,7 @@
     },
     "data_settings": {
         "n_folds": 4,
-        "max_len": 3072,
+        "max_len": 4096,
         "epochs": 20,
         "batch_size": 4,
         "val_batch_size": 4
@@ -37,7 +37,7 @@
         "max_grad_norm": 1000
     },
     "loss_options": {
-        "loss_fn": "SmoothL1Loss",
+        "loss_fn": "RMSELoss",
         "val_loss_fn": "RMSELoss",
         "reduction": "none",
         "content_weight": 1,
@@ -51,7 +51,7 @@
         "llrd": true,
         "layerwise_lr": 5e-5,
         "layerwise_lr_decay": 0.9,
-        "layerwise_weight_decay": 1e-2,
+        "layerwise_weight_decay": 1e-3,
         "layerwise_adam_epsilon": 1e-8,
         "layerwise_use_bertadam": false,
         "betas": [0.9, 0.999]
