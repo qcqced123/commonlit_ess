@@ -1,1 +1,1 @@
-{}
+{"<epoch> Train Loss": 0.42741273465703744, "<epoch> Train Content Loss": 0.19583342187717312, "<epoch> Train Wording Loss": 0.23157931448983365, "<epoch> Valid Loss": 0.6746571646796332, "<epoch> Valid Content Loss": 0.5522085242801242, "<epoch> Valid Wording Loss": 0.7971058170000712, "<epoch> Gradient Norm": 967.2313232421875, "<epoch> lr": 1.1326296046939333e-05, "_timestamp": 1695830594.5114465, "_runtime": 8430.702585458755, "_step": 16, "_wandb": {"runtime": 8430}}

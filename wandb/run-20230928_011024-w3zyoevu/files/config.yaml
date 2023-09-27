@@ -55,7 +55,7 @@ device:
   value: cuda:0
 epochs:
   desc: null
-  value: 20
+  value: 30
 freeze:
   desc: null
   value: false
@@ -130,7 +130,7 @@ nth_awp_start_epoch:
   value: 2
 num_cycles:
   desc: null
-  value: 2
+  value: 3
 num_freeze:
   desc: null
   value: 1
@@ -207,7 +207,7 @@ wandb:
   value: true
 warmup_ratio:
   desc: null
-  value: 0.05
+  value: 0.1
 wording_weight:
   desc: null
   value: 1
@@ -220,7 +220,7 @@ _wandb:
     huggingface_version: 4.31.0
     is_jupyter_run: false
     is_kaggle_kernel: false
-    start_time: 1695822163.808861
+    start_time: 1695831024.704187
     t:
       1:
       - 1
@@ -239,7 +239,6 @@ _wandb:
       - 53
       - 55
       3:
-      - 2
       - 13
       - 16
       - 23
