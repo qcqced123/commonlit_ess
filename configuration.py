@@ -67,7 +67,7 @@ class CFG:
 
     """ SWA Options """
     swa = True
-    swa_start = int(epochs*0.75)
+    swa_start = 2
     swa_lr = 1e-4
     anneal_epochs = 4
     anneal_strategy = 'cos'  # default = cos, available option: linear

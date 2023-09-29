@@ -139,6 +139,7 @@ def sync_config(json_config: json) -> None:
 
     """ SWA Options """
     CFG.swa = json_config.swa_options.swa
+    CFG.swa_start = json_config.swa_options.swa_start
     CFG.swa_lr = json_config.swa_options.swa_lr
     CFG.anneal_epochs = json_config.swa_options.anneal_epochs
     CFG.anneal_strategy = json_config.swa_options.anneal_strategy

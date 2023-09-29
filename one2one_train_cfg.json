@@ -64,9 +64,10 @@
         "warmup_ratio": 0.05
     },
     "swa_options": {
-        "swa": false,
-        "swa_lr": 5e-6,
-        "anneal_epochs": 1,
+        "swa": true,
+        "swa_start": 2,
+        "swa_lr": 5e-5,
+        "anneal_epochs": 2,
         "anneal_strategy": "cos"
     },
     "model_utils": {

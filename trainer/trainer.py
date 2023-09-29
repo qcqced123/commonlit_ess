@@ -5,6 +5,8 @@ import pandas as pd
 import transformers
 
 from torch.utils.data import DataLoader
+from torch.optim.swa_utils import AveragedModel
+
 from tqdm.auto import tqdm
 from torch import Tensor
 from typing import Tuple
@@ -15,7 +17,7 @@ import model.model as model_arch
 from configuration import CFG
 from dataset_class.preprocessing import load_data
 from trainer.trainer_utils import get_optimizer_grouped_parameters, get_scheduler, collate, one2many_collate
-from trainer.trainer_utils import AverageMeter, AWP, get_dataloader
+from trainer.trainer_utils import AverageMeter, AWP, get_dataloader, get_swa_scheduler
 
 
 class OneToOneTrainer:
@@ -59,6 +61,8 @@ class OneToOneTrainer:
             model.load_state_dict(torch.load(self.cfg.checkpoint_dir + self.cfg.state_dict))
         model.to(self.cfg.device)
 
+
+
         criterion = getattr(model_loss, self.cfg.loss_fn)(self.cfg.reduction)
         val_criterion = getattr(model_loss, self.cfg.val_loss_fn)(self.cfg.reduction)
         grouped_optimizer_params = get_optimizer_grouped_parameters(
@@ -75,6 +79,11 @@ class OneToOneTrainer:
         )
         lr_scheduler = get_scheduler(self.cfg, optimizer, len_train)
 
+        swa_model, swa_scheduler = None, None
+        if self.cfg.swa:
+            swa_model = AveragedModel(model)
+            swa_scheduler = get_swa_scheduler(self.cfg, optimizer)
+
         awp = None
         if self.cfg.awp:
             awp = AWP(
@@ -85,9 +94,9 @@ class OneToOneTrainer:
                 adv_lr=self.cfg.awp_lr,
                 adv_eps=self.cfg.awp_eps
             )
-        return model, criterion, val_criterion, optimizer, lr_scheduler, awp
+        return model, criterion, val_criterion, optimizer, lr_scheduler, awp, swa_model, swa_scheduler
 
-    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp = None) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def train_fn(self, loader_train, model, criterion, optimizer, scheduler, epoch, awp=None, swa_model=None, swa_start=None, swa_scheduler=None) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         """ function for train loop """
         # torch.autograd.set_detect_anomaly(True)
         scaler = torch.cuda.amp.GradScaler(enabled=self.cfg.amp_scaler)
@@ -129,6 +138,11 @@ class OneToOneTrainer:
                     model.parameters(),
                     self.cfg.max_grad_norm * self.cfg.n_gradient_accumulation_steps
                 )
+                # Stochastic Weight Averaging
+                if epoch >= int(swa_start):
+                    swa_model.update_parameters(model)
+                    swa_scheduler.step()
+
                 scaler.step(optimizer)
                 scaler.update()
                 scheduler.step()
@@ -154,6 +168,34 @@ class OneToOneTrainer:
                 batch_size = labels.size(0)
 
                 pred_list = model(inputs)
+                c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
+                c_loss, w_loss = val_criterion(c_pred, label_content), val_criterion(w_pred, label_wording)
+                # loss = (c_loss + w_loss) / 2  # compute mc rmse
+                loss = w_loss  # compute only for 1 target
+
+                valid_losses.update(loss.detach().cpu().numpy(), batch_size)
+                c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
+                w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
+
+            del inputs, labels, label_content, label_wording, pred_list, c_loss, w_loss, loss
+            torch.cuda.empty_cache()
+            gc.collect()
+        return valid_losses.avg, c_losses.avg, w_losses.avg
+
+    def swa_fn(self, loader_valid, swa_model, val_criterion):
+        """ Stochastic Weight Averaging, it consumes more GPU VRAM & training times """
+        swa_model.eval()
+        valid_losses, c_losses, w_losses = AverageMeter(), AverageMeter(), AverageMeter()
+        with torch.no_grad():
+            for step, (inputs, labels) in enumerate(tqdm(loader_valid)):
+                inputs = collate(inputs)
+                for k, v in inputs.items():
+                    inputs[k] = v.to(self.cfg.device)
+                labels = labels.to(self.cfg.device)
+                label_content, label_wording = labels[:, 0], labels[:, 1]
+                batch_size = labels.size(0)
+
+                pred_list = swa_model(inputs)
                 c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
                 c_loss, w_loss = val_criterion(c_pred, label_content), val_criterion(w_pred, label_wording)
                 # loss = (c_loss + w_loss) / 2  # compute mc rmse
