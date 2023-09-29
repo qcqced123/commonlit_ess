@@ -11,7 +11,7 @@
         "dataset": "OneToOneDataset",
         "model_arch": "OneToOneModel",
         "model": "microsoft/deberta-v3-large",
-        "pooling": "AttentionPooling"
+        "pooling": "MeanPooling"
     },
     "common_settings": {
         "wandb": true,
@@ -50,9 +50,9 @@
     "optimizer_options": {
         "optimizer": "AdamW",
         "llrd": true,
-        "layerwise_lr": 2e-5,
+        "layerwise_lr": 1e-5,
         "layerwise_lr_decay": 0.9,
-        "layerwise_weight_decay": 1e-3,
+        "layerwise_weight_decay": 1e-1,
         "layerwise_adam_epsilon": 1e-8,
         "layerwise_use_bertadam": false,
         "betas": [0.9, 0.999]
@@ -70,16 +70,16 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "attention_probs_dropout_prob": 0.007,
-        "hidden_dropout_prob": 0.007,
-        "init_weight": "orthogonal",
+        "attention_probs_dropout_prob": 0.1,
+        "hidden_dropout_prob": 0.1,
+        "init_weight": "kaiming_normal",
         "stop_mode": "min",
         "freeze": false,
         "num_freeze": 1,
         "reinit": true,
         "num_reinit": 1,
-        "awp": false,
-        "nth_awp_start_epoch": 4,
+        "awp": true,
+        "nth_awp_start_epoch": 3,
         "awp_eps": 1e-2,
         "awp_lr": 1e-4
     }

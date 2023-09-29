@@ -239,9 +239,12 @@ class MiniBatchCollate(object):
         return inputs, labels, position_list
 
 
-
 class AWP:
-    """ Adversarial Weight Perturbation """
+    """
+    Adversarial Weight Perturbation for OneToOne Trainer
+    References:
+        https://www.kaggle.com/code/skraiii/pppm-tokenclassificationmodel-train-8th-place
+    """
     def __init__(
         self,
         model,
@@ -262,15 +265,14 @@ class AWP:
         self.backup = {}
         self.backup_eps = {}
 
-    def attack_backward(self, inputs: dict, label):
+    def attack_backward(self, inputs: Dict, label: Tensor):
         with torch.cuda.amp.autocast(enabled=self.awp):
             self._save()
             self._attack_step()
             y_preds = self.model(inputs)
-            adv_loss = self.criterion(
-                y_preds.view(-1, 1), label.view(-1, 1))
-            mask = (label.view(-1, 1) != -1)
-            adv_loss = torch.masked_select(adv_loss, mask).mean()
+            adv_loss = self.criterion(y_preds, label)
+            # mask = (label.view(-1, 1) != -1)  # this line will be needed for OneToMany Trainer
+            # adv_loss = torch.masked_select(adv_loss, mask).mean()  # this line will be needed for OneToMany Trainer
             self.optimizer.zero_grad()
         return adv_loss
 

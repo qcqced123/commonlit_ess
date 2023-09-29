@@ -114,7 +114,6 @@ class OneToOneTrainer:
 
             scaler.scale(loss).backward()
             losses.update(loss.detach().cpu().numpy(), batch_size)  # Must do detach() for avoid memory leak
-
             c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
             w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
