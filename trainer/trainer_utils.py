@@ -265,13 +265,13 @@ class AWP:
         self.backup = {}
         self.backup_eps = {}
 
-    def attack_backward(self, inputs: Dict, label: Tensor):
+    def attack_backward(self, inputs: Dict, c_label: Tensor, w_label: Tensor):
         with torch.cuda.amp.autocast(enabled=self.awp):
             self._save()
             self._attack_step()
             pred_list = self.model(inputs)
             c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
-            c_adv_loss, w_adv_loss = self.criterion(c_pred, label), self.criterion(w_pred, label)
+            c_adv_loss, w_adv_loss = self.criterion(c_pred, c_label), self.criterion(w_pred, w_label)
             # mask = (label.view(-1, 1) != -1)  # this line will be needed for OneToMany Trainer
             # adv_loss = torch.masked_select(adv_loss, mask).mean()  # this line will be needed for OneToMany Trainer
             self.optimizer.zero_grad()

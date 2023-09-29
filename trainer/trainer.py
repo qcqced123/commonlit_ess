@@ -107,7 +107,8 @@ class OneToOneTrainer:
                 pred_list = model(inputs)
                 c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
                 c_loss, w_loss = criterion(c_pred, label_content), criterion(w_pred, label_wording)
-                loss = (self.cfg.content_weight * c_loss) + (self.cfg.wording_weight * w_loss)  # Weighted MCRMSE Loss
+                # loss = (self.cfg.content_weight * c_loss) + (self.cfg.wording_weight * w_loss)  # Weighted MCRMSE Loss
+                loss = (self.cfg.wording_weight * w_loss)  # wording only train
 
             if self.cfg.n_gradient_accumulation_steps > 1:
                 loss = loss / self.cfg.n_gradient_accumulation_steps
@@ -118,7 +119,7 @@ class OneToOneTrainer:
             w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
             if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
-                awp_c_loss, awp_w_loss = awp.attack_backward(inputs, label_content), awp.attack_backward(inputs, label_wording)
+                awp_c_loss, awp_w_loss = awp.attack_backward(inputs, label_content, label_wording)
                 scaler.scale(self.cfg.content_weight*awp_c_loss + self.cfg.wording_weight*awp_w_loss).backward()
                 awp._restore()
 
@@ -155,7 +156,8 @@ class OneToOneTrainer:
                 pred_list = model(inputs)
                 c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
                 c_loss, w_loss = val_criterion(c_pred, label_content), val_criterion(w_pred, label_wording)
-                loss = (c_loss + w_loss) / 2  # compute mc rmse
+                # loss = (c_loss + w_loss) / 2  # compute mc rmse
+                loss = w_loss  # compute only for 1 target
 
                 valid_losses.update(loss.detach().cpu().numpy(), batch_size)
                 c_losses.update(c_loss.detach().cpu().numpy(), batch_size)
