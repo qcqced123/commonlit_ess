@@ -10,7 +10,7 @@
         "loop": "train_loop",
         "dataset": "OneToManyDataset",
         "model_arch": "OneToManyModel",
-        "model": "microsoft/deberta-v3-large",
+        "model": "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
         "pooling": "SubSequenceGEMPooling"
     },
     "common_settings": {
@@ -33,7 +33,7 @@
         "amp_scaler": false,
         "gradient_checkpoint": true,
         "clipping_grad": true,
-        "n_gradient_accumulation_steps": 2,
+        "n_gradient_accumulation_steps": 1,
         "max_grad_norm": 1000
     },
     "loss_options": {
@@ -60,7 +60,7 @@
         "scheduler": "cosine_annealing",
         "batch_scheduler": true,
         "num_cycles": 3,
-        "warmup_ratio": 0.1
+        "warmup_ratio": 0.033
     },
     "swa_options": {
         "swa": false,
@@ -73,8 +73,8 @@
         "hidden_dropout_prob": 0.007,
         "init_weight": "kaiming_uniform",
         "stop_mode": "min",
-        "freeze": false,
-        "num_freeze": 1,
+        "freeze": true,
+        "num_freeze": 4,
         "reinit": true,
         "num_reinit": 1,
         "awp": false,

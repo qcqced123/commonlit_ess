@@ -11,7 +11,7 @@
         "dataset": "OneToOneDataset",
         "model_arch": "OneToOneModel",
         "model": "microsoft/deberta-v3-large",
-        "pooling": "MeanPooling"
+        "pooling": "AttentionPooling"
     },
     "common_settings": {
         "wandb": true,
@@ -24,9 +24,9 @@
     },
     "data_settings": {
         "n_folds": 4,
-        "max_len": 640,
+        "max_len": 1024,
         "epochs": 20,
-        "batch_size": 64,
+        "batch_size": 32,
         "val_batch_size": 32,
         "smart_batch": false
     },
@@ -38,7 +38,7 @@
         "max_grad_norm": 1000
     },
    "loss_options": {
-        "loss_fn": "SmoothL1Loss",
+        "loss_fn": "RMSELoss",
         "val_loss_fn": "RMSELoss",
         "reduction": "mean",
         "content_weight": 1,
@@ -50,9 +50,9 @@
     "optimizer_options": {
         "optimizer": "AdamW",
         "llrd": true,
-        "layerwise_lr": 5e-5,
+        "layerwise_lr": 2e-5,
         "layerwise_lr_decay": 0.9,
-        "layerwise_weight_decay": 1e-6,
+        "layerwise_weight_decay": 1e-3,
         "layerwise_adam_epsilon": 1e-8,
         "layerwise_use_bertadam": false,
         "betas": [0.9, 0.999]
@@ -70,12 +70,12 @@
         "anneal_strategy": "cos"
     },
     "model_utils": {
-        "attention_probs_dropout_prob": 0.1,
-        "hidden_dropout_prob": 0.1,
-        "init_weight": "kaiming_normal",
+        "attention_probs_dropout_prob": 0.007,
+        "hidden_dropout_prob": 0.007,
+        "init_weight": "orthogonal",
         "stop_mode": "min",
-        "freeze": true,
-        "num_freeze": 4,
+        "freeze": false,
+        "num_freeze": 1,
         "reinit": true,
         "num_reinit": 1,
         "awp": false,

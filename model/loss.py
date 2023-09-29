@@ -8,7 +8,7 @@ from torch import Tensor
 
 class SmoothL1Loss(nn.Module):
     """ Smooth L1 Loss in Pytorch """
-    def __init__(self, reduction: str = 'mean') -> Tensor:
+    def __init__(self, reduction: str = 'mean') -> None:
         super().__init__()
         self.reduction = reduction
 
@@ -17,8 +17,19 @@ class SmoothL1Loss(nn.Module):
         return criterion(y_pred, y_true)
 
 
+class MSELoss(nn.Module):
+    """ Mean Squared Error Loss in Pytorch """
+    def __init__(self, reduction: str = 'mean') -> None:
+        super().__init__()
+        self.reduction = reduction
+
+    def forward(self, y_pred, y_true) -> Tensor:
+        criterion = nn.MSELoss(reduction=self.reduction)
+        return criterion(y_pred, y_true)
+
+
 class RMSELoss(nn.Module):
-    def __init__(self, reduction: str = 'mean', eps=1e-8) -> Tensor:
+    def __init__(self, reduction: str = 'mean', eps=1e-8) -> None:
         super().__init__()
         self.mse = nn.MSELoss(reduction=reduction)
         self.eps = eps # If MSE == 0, We need eps
@@ -76,7 +87,7 @@ class WeightedMSELoss(nn.Module):
     [Reference]
     https://www.kaggle.com/competitions/feedback-prize-english-language-learning/discussion/369793
     """
-    def __init__(self, reduction, task_num=6) -> None:
+    def __init__(self, reduction, task_num=1) -> None:
         super(WeightedMSELoss, self).__init__()
         self.task_num = task_num
         self.smoothl1loss = nn.SmoothL1Loss(reduction=reduction)
