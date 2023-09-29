@@ -269,12 +269,13 @@ class AWP:
         with torch.cuda.amp.autocast(enabled=self.awp):
             self._save()
             self._attack_step()
-            y_preds = self.model(inputs)
-            adv_loss = self.criterion(y_preds, label)
+            pred_list = self.model(inputs)
+            c_pred, w_pred = pred_list[:, 0], pred_list[:, 1]
+            c_adv_loss, w_adv_loss = self.criterion(c_pred, label), self.criterion(w_pred, label)
             # mask = (label.view(-1, 1) != -1)  # this line will be needed for OneToMany Trainer
             # adv_loss = torch.masked_select(adv_loss, mask).mean()  # this line will be needed for OneToMany Trainer
             self.optimizer.zero_grad()
-        return adv_loss
+        return c_adv_loss, w_adv_loss
 
     def _attack_step(self) -> None:
         e = 1e-6

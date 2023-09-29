@@ -118,8 +118,8 @@ class OneToOneTrainer:
             w_losses.update(w_loss.detach().cpu().numpy(), batch_size)
 
             if self.cfg.awp and epoch >= self.cfg.nth_awp_start_epoch:
-                awp_c_loss, awp_w_loss = awp.attack_backward(c_pred, label_content), awp.attack_backward(w_pred, label_wording)
-                scaler.scale(awp_c_loss + awp_w_loss).backward()
+                awp_c_loss, awp_w_loss = awp.attack_backward(inputs, label_content), awp.attack_backward(inputs, label_wording)
+                scaler.scale(self.cfg.content_weight*awp_c_loss + self.cfg.wording_weight*awp_w_loss).backward()
                 awp._restore()
 
             if self.cfg.clipping_grad and (step + 1) % self.cfg.n_gradient_accumulation_steps == 0 or self.cfg.n_gradient_accumulation_steps == 1:

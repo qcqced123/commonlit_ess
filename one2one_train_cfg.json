@@ -26,8 +26,8 @@
         "n_folds": 4,
         "max_len": 1024,
         "epochs": 20,
-        "batch_size": 32,
-        "val_batch_size": 32,
+        "batch_size": 64,
+        "val_batch_size": 16,
         "smart_batch": false
     },
     "gradient_settings": {
@@ -76,10 +76,10 @@
         "stop_mode": "min",
         "freeze": false,
         "num_freeze": 1,
-        "reinit": true,
+        "reinit": false,
         "num_reinit": 1,
         "awp": true,
-        "nth_awp_start_epoch": 3,
+        "nth_awp_start_epoch": 1,
         "awp_eps": 1e-2,
         "awp_lr": 1e-4
     }

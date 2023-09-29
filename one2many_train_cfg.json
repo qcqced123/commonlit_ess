@@ -10,7 +10,7 @@
         "loop": "train_loop",
         "dataset": "OneToManyDataset",
         "model_arch": "OneToManyModel",
-        "model": "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
+        "model": "microsoft/deberta-v3-large",
         "pooling": "SubSequenceGEMPooling"
     },
     "common_settings": {
