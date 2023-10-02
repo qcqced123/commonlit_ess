@@ -78,7 +78,7 @@ def train_loop(cfg: CFG) -> None:
             del train_loss, valid_loss, grad_norm, lr
             gc.collect(), torch.cuda.empty_cache()
 
-            if not early_stopping.early_stop:
+            if cfg.swa and not early_stopping.early_stop:
                 update_bn(loader_train, swa_model)
                 swa_loss = train_input.swa_fn(loader_valid, swa_model, val_criterion)
                 print(f'[{epoch + 1}/{cfg.epochs}] SWA Val Loss: {np.round(swa_loss, 4)}')

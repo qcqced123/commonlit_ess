@@ -6,8 +6,33 @@ import torch.nn.functional as F
 from model.model_utils import check_nan, nan_filtering
 
 
-# WeightedLayerPooling: Use Intermediate Layer's Embedding
-class WeightedLayerPooling(nn.Module):
+# WeightedLayerPooling for CLS token embedding Ver
+class CLSWeightedLayerPooling(nn.Module):
+    """
+    For Weighted Layer Pooling Class, use CLS token embedding Ver
+    Args:
+        auto_cfg: AutoConfig from model class member variable
+        layer_start: how many layers do you want to use, default 9
+        layer_weights: layer weights for pooling, default None
+    """
+
+    def __init__(self, auto_cfg, layer_start: int = 9, layer_weights=None) -> None:
+        super(CLSWeightedLayerPooling, self).__init__()
+        self.layer_start = layer_start
+        self.num_hidden_layers = auto_cfg.num_hidden_layers
+        self.layer_weights = layer_weights if layer_weights is not None \
+            else nn.Parameter(torch.tensor([1] * (self.num_hidden_layers + 1 - layer_start), dtype=torch.float))
+
+    def forward(self, all_hidden_states, attention_mask) -> Tensor:
+        all_layer_embedding = torch.stack(list(all_hidden_states), dim=0)
+        all_layer_embedding = all_layer_embedding[self.layer_start:, :, :, :]
+        weight_factor = self.layer_weights.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).expand(all_layer_embedding.size())
+        weighted_average = (weight_factor*all_layer_embedding).sum(dim=0) / self.layer_weights.sum()
+        return weighted_average
+
+
+# WeightedLayerPooling for Mean each layer's embedding Ver
+class MeanWeightedLayerPooling(nn.Module):
     """
     For Weighted Layer Pooling Class
     In Original Paper, they use [CLS] token for classification task.
@@ -19,7 +44,7 @@ class WeightedLayerPooling(nn.Module):
         layer_weights: layer weights for pooling, default None
     """
     def __init__(self, auto_cfg, layer_start: int = 17, layer_weights=None) -> None:
-        super(WeightedLayerPooling, self).__init__()
+        super(MeanWeightedLayerPooling, self).__init__()
         self.layer_start = layer_start
         self.num_hidden_layers = auto_cfg.num_hidden_layers
         self.layer_weights = layer_weights if layer_weights is not None \

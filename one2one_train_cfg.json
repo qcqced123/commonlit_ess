@@ -78,7 +78,7 @@
         "freeze": false,
         "num_freeze": 1,
         "reinit": true,
-        "num_reinit": 4,
+        "num_reinit": 1,
         "awp": false,
         "nth_awp_start_epoch": 1,
         "awp_eps": 1e-2,

@@ -61,8 +61,6 @@ class OneToOneTrainer:
             model.load_state_dict(torch.load(self.cfg.checkpoint_dir + self.cfg.state_dict))
         model.to(self.cfg.device)
 
-
-
         criterion = getattr(model_loss, self.cfg.loss_fn)(self.cfg.reduction)
         val_criterion = getattr(model_loss, self.cfg.val_loss_fn)(self.cfg.reduction)
         grouped_optimizer_params = get_optimizer_grouped_parameters(
@@ -79,11 +77,13 @@ class OneToOneTrainer:
         )
         lr_scheduler = get_scheduler(self.cfg, optimizer, len_train)
 
+        # init SWA Module
         swa_model, swa_scheduler = None, None
         if self.cfg.swa:
             swa_model = AveragedModel(model)
             swa_scheduler = get_swa_scheduler(self.cfg, optimizer)
 
+        # init AWP Module
         awp = None
         if self.cfg.awp:
             awp = AWP(
